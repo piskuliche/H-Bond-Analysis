@@ -1,0 +1,14 @@
+help(
+[[
+
+Code for calculating hydrogen bonds
+
+]]
+)
+
+whatis("Name: Contacts")
+whatis("Version: Aug2022")
+whatis("Category: tools")
+whatis("Keywords: fortran,python, tools, analysis")
+whatis("URL: contact_analysis.git")
+whatis("Description: This is a combination of my codes that I have written for running hydrogen bond calculations.")
