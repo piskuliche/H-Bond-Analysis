@@ -4,17 +4,19 @@ module constants
 end module constants
 
 module parameters
-  integer :: number_of_frames, number_of_atoms
+  integer :: number_of_frames, number_of_atoms, num_ohs
 
 
   ! Read_Input
   integer :: num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
   integer :: num_mol_wat, num_mol_acc, num_acc_sites
   integer :: num_other, start_wat_index
+  integer :: frame_start,frame_stop
 
   real :: thickness
-  real :: crit_ox, crit_hx, crit_ohx
-  real :: critsq_ox, critsq_hx
+  real :: crit_ox, crit_hx, crit_deg
+  real :: critsq_ox, critsq_hx, crit_rad
+
 
   character(len=40) :: fname,iname
 
@@ -23,16 +25,17 @@ module parameters
 
   ! Separator -----------------------------
 
-  common  number_of_frames, number_of_atoms
+  common  number_of_frames, number_of_atoms, num_ohs
 
   ! Read_Input
   common  num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
   common  num_mol_wat, num_mol_acc, num_acc_sites
   common  num_other, start_wat_index
+  common  frame_start,frame_stop
 
   common  thickness
-  common  crit_ox, crit_hx, crit_ohx
-  common  critsq_ox, critsq_hx
+  common  crit_ox, crit_hx, crit_deg
+  common  critsq_ox, critsq_hx, crit_rad
 
   common  fname, iname
 
@@ -55,7 +58,7 @@ program hba
   integer :: ntmp,oi,hi,found
 
   real :: roxsq, rhxsq, thta
-  real :: nhbonds,hb2
+  real :: acc_hbonds, wat_hbonds
 
   integer, allocatable :: acc_map(:)
   integer, allocatable :: prev_hbond(:), curr_hbond(:)
@@ -68,15 +71,23 @@ program hba
 
 
 
+  ! Open Log File
+  open(12,file='hbonds.log')
+  write(12,*) "Beginning Hbond Calculation"
+  open(13,file='hbond-list.dat')
   ! Read Input File
   call Read_Input()
+  num_ohs = num_mol_wat*2
+
+  ! Call Error Testing
+  call Error_Testing()
 
   ! Call allocations
   allocate(r_water(num_mol_wat,3,3))
   allocate(r_acceptor(num_acc_sites,3))
   allocate(acc_map(num_acc_sites))
-  allocate(curr_hbond(num_mol_wat*2))
-  allocate(prev_hbond(num_mol_wat*2))
+  allocate(curr_hbond(num_ohs))
+  allocate(prev_hbond(num_ohs))
 
   ! Generate Map of Acceptor Sites
   call Map_Acceptors(acc_map)
@@ -86,11 +97,20 @@ program hba
   call trj%open(trim(fname),trim(iname))
   number_of_frames = trj%nframes
   number_of_atoms  = trj%natoms()
-  write(*,*) "There are ", number_of_frames," frames."
-  write(*,*) "There are ", number_of_atoms," atoms."
+  write(12,*) "There are ", number_of_frames," frames."
+  write(12,*) "There are ", number_of_atoms," atoms."
 
+  write(*,*) "Begin loop over frames"
+  write(12,*) "#frame wat_hbonds acc_hbonds"
+  do i=1,frame_start-1
+    ntmp = trj%read_next(1)
+    if (mod(i,100) == 0) write(*,*) "Cycled through frame ", i
+  enddo
   ! Loop over frames
-  do i=1,number_of_frames
+  !$OMP PARALLEL
+  do i=frame_start,frame_stop
+    !$OMP SINGLE
+    write(*,*) "Reached frame ",i
     ! Read Frame
     ntmp = trj%read_next(1)
     box  = trj%box(1)
@@ -100,7 +120,6 @@ program hba
       r_acceptor(ac,:) = coord(:)
     enddo
     ! Assign Water Atoms
-    write(*,*) start_wat_index
     do wc=1,num_mol_wat
       oi = start_wat_index + (wc-1)*3
       do j=1,3
@@ -110,11 +129,14 @@ program hba
     enddo
     
     ! Call Distance Calculation
-    nhbonds = 0
-    hb2=0
-    prev_hbond=0
-    curr_hbond=0
-    !$OMP PARALLEL DO PRIVATE(oh,ac,w2,found,roxsq,rhxsq,thta) reduction(+:nhbonds,hb2)
+    acc_hbonds = 0
+    wat_hbonds = 0
+    prev_hbond = 0 
+    curr_hbond = 0
+    !$OMP END SINGLE
+    !$OMP BARRIER
+
+    !$OMP DO PRIVATE(oh,ac,w2,found,roxsq,rhxsq,thta) reduction(+:acc_hbonds,wat_hbonds) SCHEDULE(DYNAMIC)
     waters: do wc=1,num_mol_wat
       ohs: do oh=1,2
         found=0
@@ -124,8 +146,8 @@ program hba
             rhxsq = distance2(r_water(wc,oh+1,:),r_acceptor(ac,:),box)
             if (rhxsq <= critsq_hx) then
               thta = bond_angle(r_water(wc,oh+1,:),r_water(wc,1,:),r_acceptor(ac,:),box)
-              if (thta <= crit_ohx) then
-                nhbonds = nhbonds + 1
+              if (thta <= crit_rad) then
+                acc_hbonds = acc_hbonds + 1
                 curr_hbond((wc-1)*2+oh)=ac
                 found=1
                 exit accs
@@ -135,31 +157,58 @@ program hba
         enddo accs
         if (found == 0) then
           wat2: do w2=1,num_mol_wat
-            roxsq = distance2(r_water(wc,1,:),r_water(w2,1,:),box)
-            if (roxsq <= critsq_ox) then
-              rhxsq = distance2(r_water(wc,oh+1,:),r_water(w2,1,:),box)
-              if (rhxsq <= critsq_hx) then
-                thta = bond_angle(r_water(wc,oh+1,:),r_water(wc,1,:),r_water(w2,1,:),box)
-                if (thta <= crit_ohx) then
-                  hb2 = hb2 + 1
-                  curr_hbond((wc-1)*2+oh)=w2+num_acc_sites
-                  exit wat2
-                endif !thta
-              endif ! rhxsq
-            endif ! Roxsq
+            if ( wc /= w2) then
+              roxsq = distance2(r_water(wc,1,:),r_water(w2,1,:),box)
+              if (roxsq <= critsq_ox) then
+                rhxsq = distance2(r_water(wc,oh+1,:),r_water(w2,1,:),box)
+                if (rhxsq <= critsq_hx) then
+                  thta = bond_angle(r_water(wc,oh+1,:),r_water(wc,1,:),r_water(w2,1,:),box)
+                  if (thta <= crit_rad) then
+                    wat_hbonds = wat_hbonds + 1
+                    curr_hbond((wc-1)*2+oh)=w2+num_acc_sites
+                    exit wat2
+                  endif !thta
+                endif ! rhxsq
+              endif ! Roxsq
+            endif ! check equiv
           enddo wat2
         endif ! found
       enddo ohs
     enddo waters
-    !$OMP END PARALLEL DO
-  
-    write(*,*) nhbonds,hb2
+    !$OMP END  DO
+    !$OMP SINGLE
+    write(12,*) i, wat_hbonds, acc_hbonds 
+    do wc=1,num_ohs
+      write(13,*) curr_hbond(wc)
+    enddo
+    !$OMP END SINGLE
+    !$OMP BARRIER
   ! End frame loop
   enddo
+  !$OMP END PARALLEL
+  write(12,*) "Calculation complete"
+  close(12)
   
   ! End Program
 
 end program hba
+
+subroutine Error_Testing()
+  use parameters 
+  use constants
+  USE iso_fortran_env, ONLY : error_unit
+  implicit none
+  
+  ! Test that criteria are not zero
+  if (crit_ox*crit_hx*crit_deg == 0) then
+    write(error_unit,*) "Error: Criteria must be nonzero"
+    stop 1
+  endif
+  if (frame_start >= frame_stop) then
+    write(error_unit,*) "Error: frame_start must be less than frame_stop"
+    stop 1
+  endif
+end subroutine Error_Testing
 
 subroutine Read_Input()
   use parameters
@@ -177,11 +226,14 @@ subroutine Read_Input()
   read(10,*)
   read(10,*) fname,iname
   read(10,*)
+  read(10,*) frame_start, frame_stop
+  read(10,*)
   read(10,*) thickness
   read(10,*)
-  read(10,*) crit_ox, crit_hx, crit_ohx
+  read(10,*) crit_ox, crit_hx, crit_deg
   critsq_ox = crit_ox*crit_ox
   critsq_hx = crit_hx*crit_hx
+  crit_rad = crit_deg*pi/180.0
   read(10,*)
   read(10,*) num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
   read(10,*)

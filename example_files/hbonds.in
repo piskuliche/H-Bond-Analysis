@@ -1,0 +1,17 @@
+#fname indexname
+step8_1.xtc index.ndx
+#frame_start frame_stop
+1 1000
+#thickness
+3.5
+# crit_ox crit_hx crit_ohx
+.35 .245 30
+# nmol whichiswat whichisacc num_sites
+4   4   1 8
+# Now list all four with atom counts, final four lines of topol.top file
+DOPC             512
+SOD   	           8
+CLA   	           8
+TIP3           31977
+
+
