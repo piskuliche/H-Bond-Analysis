@@ -5,7 +5,9 @@ HOMEPATH=$(PWD)
 lb_gmx_inc=/usr2/postdoc/piskulic/Software/gmxfort/libgmxfort-master/bin/include
 lb_gmx_lib=/usr2/postdoc/piskulic/Software/gmxfort/libgmxfort-master/bin/lib
 
-hba: src/fortran/funcs.f90 src/fortran/hbond-finder.f90
+all: hba hyd
+
+hba: src/fortran/funcs.f90 src/fortran/hbond-finder.f90 
 	mkdir -p bin/
 	touch bin/test
 	rm bin/*
@@ -15,4 +17,8 @@ hba: src/fortran/funcs.f90 src/fortran/hbond-finder.f90
 	cat module/hba_header module/path.include > module/hba.lua
 	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hba src/fortran/funcs.f90  src/fortran/hbond-finder.f90
 	ln -s $(HOMEPATH)/src/python/mark_acceptors.py bin/
+	chmod 777 bin/*
+
+hyd: src/fortran/hydration-shell.f90
+	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hyd src/fortran/funcs.f90 src/fortran/hydration-shell.f90
 	chmod 777 bin/*

@@ -29,11 +29,23 @@ if __name__ == "__main__":
     u = mda.Universe(tprfile)
 
     isAcc= []
+    isHeavy=[]
     for atom in u.atoms:
         if ("O" in atom.name) and atom.resname == "DOPC":
             isAcc.append(1)
         elif atom.resname == "DOPC":
             isAcc.append(0)
+    for atom in u.atoms:
+        if ("C" in atom.name) and atom.resname == "DOPC":
+            isHeavy.append(1)
+        elif ("O" in atom.name) and atom.resname == "DOPC":
+            isHeavy.append(2)
+        elif ("P" in atom.name) and atom.resname == "DOPC":
+            isHeavy.append(3)
+        elif ("N" in atom.name) and atom.resname == "DOPC":
+            isHeavy.append(4)
+        elif atom.resname == "DOPC":
+            isHeavy.append(0)
 
     numacc = np.sum(isAcc)
     f=open('is_acc.txt','w')
@@ -41,4 +53,18 @@ if __name__ == "__main__":
     for i in range(len(isAcc)):
         f.write("%d\n" % isAcc[i])
     f.close()
+    f=open('is_heavy.txt','w')
+    f.write("%d\n" % len(isHeavy))
+    for i in range(len(isHeavy)):
+        f.write("%d\n" % isHeavy[i])
+    f.close()
+    f=open('heavy.counts','w')
+    isHeavy=np.array(isHeavy)
+    Ccount = np.sum((isHeavy==1)*1)
+    Ocount = np.sum((isHeavy==2)*1)
+    Pcount = np.sum((isHeavy==3)*1)
+    Ncount = np.sum((isHeavy==4)*1)
+
+    f.write("%d %d %d %d\n" % (Ccount,Ocount,Pcount,Ncount))
+
 
