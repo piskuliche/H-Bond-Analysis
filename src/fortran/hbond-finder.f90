@@ -10,7 +10,7 @@ module parameters
   ! Read_Input
   integer :: num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
   integer :: num_mol_wat, num_mol_acc, num_acc_sites
-  integer :: num_other, start_wat_index
+  integer :: num_other, start_wat_index, start_acc_index
   integer :: frame_start,frame_stop
 
   real :: thickness
@@ -30,7 +30,7 @@ module parameters
   ! Read_Input
   common  num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
   common  num_mol_wat, num_mol_acc, num_acc_sites
-  common  num_other, start_wat_index
+  common  num_other, start_wat_index, start_acc_index
   common  frame_start,frame_stop
 
   common  thickness
@@ -91,7 +91,6 @@ program hba
 
   ! Generate Map of Acceptor Sites
   call Map_Acceptors(acc_map)
-  start_wat_index = num_acc_atoms+num_other
 
   ! Open Trajectory
   call trj%open(trim(fname),trim(iname))
@@ -229,7 +228,7 @@ subroutine Map_Acceptors(map)
   do i=1,num_acc_atoms
     read(11,*) tmp
     if (tmp == 1) then
-      map(cnt) = i
+      map(cnt) = i + start_acc_index ! This handles the offset if there are other atoms before
       cnt = cnt +  1
     endif
   enddo
@@ -242,12 +241,14 @@ subroutine Read_Input()
     implicit none
 
     integer :: i
-    integer :: nother
+    integer :: nother, apermol
 
     character(len=6) :: ctmp
 
 
     nother = 0
+    apermol = 0
+    ! Open and read the input file
     open(10,file='hbonds.in',status='old')
     read(10,*)
     read(10,*) fname,iname
@@ -257,23 +258,40 @@ subroutine Read_Input()
     read(10,*) thickness
     read(10,*)
     read(10,*) crit_ox, crit_hx, crit_deg
+    ! Do some calculations to get square cutoffs and radians
     critsq_ox = crit_ox*crit_ox
     critsq_hx = crit_hx*crit_hx
     crit_rad = crit_deg*pi/180.0
     read(10,*)
     read(10,*) num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
     read(10,*)
+    ! Read in the number of each molecule type
+    start_wat_index = 0
+    start_acc_index = 0
     do i=1,num_mol_types
       if (i == which_is_wat) then
-        read(10,*) ctmp, num_mol_wat
+        read(10,*) ctmp, num_mol_wat, apermol
       else if (i == which_is_acc) then
-        read(10,*) ctmp, num_mol_acc
-      else
-        read(10,*) ctmp, nother
-        num_other = num_other + nother
+        read(10,*) ctmp, num_mol_acc, apermol
+        if (which_is_acc < which_is_wat) then !add if acc is before wat
+          start_wat_index = start_wat_index + num_mol_acc*apermol
+        endif
+      else if (i /= which_is_wat .and. i /= which_is_acc) then
+        read(10,*) ctmp, nother, apermol
+        num_other = num_other + nother*apermol
+        if (i < which_is_wat) then ! add if other is before wat
+          start_wat_index = start_wat_index + nother*apermol
+        endif
+        if (i < which_is_acc) then ! add if other is before acc
+          start_acc_index = start_acc_index + nother*apermol
+        endif
       endif
     enddo
     write(*,*) "There are ", num_mol_wat, " waters"
+    write(*,*) "There are ", num_mol_acc, " acceptors"
+    write(*,*) "There are ", num_other, " other atoms"
+    write(*,*) "The start index of the water molecules is ", start_wat_index
+    write(*,*) "The start index of the acceptor molecules is ", start_acc_index
     ! Calculate number of acceptor sites
     num_acc_sites = num_acc_sites_per_mol * num_mol_acc
     close(10)
