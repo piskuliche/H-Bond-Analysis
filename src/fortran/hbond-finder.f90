@@ -265,6 +265,8 @@ subroutine Read_Input()
     read(10,*)
     read(10,*) num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
     read(10,*)
+    read(10,*) ! which is laur ... for hydration code.
+    read(10,*)
     ! Read in the number of each molecule type
     start_wat_index = 0
     start_acc_index = 0

@@ -30,6 +30,7 @@ if __name__ == "__main__":
 
     isAcc= []
     isHeavy=[]
+    LaurisHeavy=[]
     for atom in u.atoms:
         if ("O" in atom.name) and atom.resname == "DOPC":
             isAcc.append(1)
@@ -46,6 +47,17 @@ if __name__ == "__main__":
             isHeavy.append(4)
         elif atom.resname == "DOPC":
             isHeavy.append(0)
+    for atom in u.atoms:
+        if ("C" in atom.name) and atom.resname == "LAUR":
+            LaurisHeavy.append(5)
+        elif ("O" in atom.name) and atom.resname == "LAUR":
+            LaurisHeavy.append(6)
+        elif ("P" in atom.name) and atom.resname == "LAUR":
+            LaurisHeavy.append(7)
+        elif ("N" in atom.name) and atom.resname == "LAUR":
+            LaurisHeavy.append(8)
+        elif atom.resname == "LAUR":
+            LaurisHeavy.append(0)
 
     numacc = np.sum(isAcc)
     f=open('is_acc.txt','w')
@@ -58,13 +70,26 @@ if __name__ == "__main__":
     for i in range(len(isHeavy)):
         f.write("%d\n" % isHeavy[i])
     f.close()
+    f=open('laur_is_heavy.txt','w')
+    f.write("%d\n" % len(LaurisHeavy))
+    for i in range(len(LaurisHeavy)):
+        f.write("%d\n" % LaurisHeavy[i])
+    f.close()
     f=open('heavy.counts','w')
     isHeavy=np.array(isHeavy)
     Ccount = np.sum((isHeavy==1)*1)
     Ocount = np.sum((isHeavy==2)*1)
     Pcount = np.sum((isHeavy==3)*1)
     Ncount = np.sum((isHeavy==4)*1)
-
     f.write("%d %d %d %d\n" % (Ccount,Ocount,Pcount,Ncount))
+    f.close()
+    f=open('laur.counts','w')
+    LaurisHeavy=np.array(LaurisHeavy)
+    Ccount = np.sum((LaurisHeavy==5)*1)
+    Ocount = np.sum((LaurisHeavy==6)*1)
+    Pcount = np.sum((LaurisHeavy==7)*1)
+    Ncount = np.sum((LaurisHeavy==8)*1)
+    f.write("%d %d %d %d\n" % (Ccount,Ocount,Pcount,Ncount))
+    f.close()
 
 
