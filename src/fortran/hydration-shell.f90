@@ -7,7 +7,7 @@ module hyd_parameters
   ! Read_Input
   integer :: num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
   integer :: num_mol_wat, num_mol_acc
-  integer :: num_other, start_wat_index
+  integer :: num_other, start_wat_index, start_acc_index
   integer :: frame_start,frame_stop
   integer :: num_C, num_O, num_N, num_P, num_heavy
 
@@ -26,7 +26,7 @@ module hyd_parameters
   ! Read_Input
   common  num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
   common  num_mol_wat, num_mol_acc
-  common  num_other, start_wat_index
+  common  num_other, start_wat_index, start_acc_index
   common  frame_start,frame_stop
   common  num_C, num_O, num_N, num_P, num_heavy
 
@@ -81,7 +81,6 @@ program hyd_shell
 
   ! Maps
   call Map_Sites(atom_map)
-  start_wat_index = num_lip_atoms + num_other
 
   ! Open Trajectory
   call trj%open(trim(fname),trim(iname))
@@ -188,7 +187,7 @@ subroutine Map_Sites(atom_map)
   do i=1,num_lip_atoms
     read(12,*) tmp
     if (tmp /= 0) then
-      atom_map(cnt,1) = i
+      atom_map(cnt,1) = i + start_acc_index
       atom_map(cnt,2) = tmp
       cnt = cnt + 1
     endif
@@ -202,7 +201,7 @@ subroutine Hyd_Input(criteria)
   use hyd_parameters
   implicit none
 
-  integer :: i, nother
+  integer :: i, nother, apermol
   real    :: crit_C, crit_O, crit_P, crit_N
 
   real, dimension(4) :: criteria
@@ -221,14 +220,25 @@ subroutine Hyd_Input(criteria)
   read(10,*)
   read(10,*) num_mol_types, which_is_wat, which_is_acc, num_acc_sites_per_mol
   read(10,*)
+  start_wat_index = 0
+  start_acc_index = 0
   do i=1,num_mol_types
     if (i == which_is_wat) then
-      read(10,*) ctmp, num_mol_wat
+      read(10,*) ctmp, num_mol_wat, apermol
     else if (i == which_is_acc) then
-      read(10,*) ctmp, num_mol_acc
-    else
-      read(10,*) ctmp, nother
-      num_other = num_other + nother
+      read(10,*) ctmp, num_mol_acc, apermol
+      if (which_is_acc < which_is_wat) then !add if acc is before wat
+        start_wat_index = start_wat_index + num_mol_acc*apermol
+      endif
+    else if (i /= which_is_wat .and. i /= which_is_acc) then
+      read(10,*) ctmp, nother, apermol
+      num_other = num_other + nother*apermol
+      if (i < which_is_wat) then ! add if other is before wat
+        start_wat_index = start_wat_index + nother*apermol
+      endif
+      if (i < which_is_acc) then ! add if other is before acc
+        start_acc_index = start_acc_index + nother*apermol
+      endif
     endif
   enddo
   read(10,*)

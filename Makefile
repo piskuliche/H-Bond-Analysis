@@ -17,6 +17,7 @@ hba: src/fortran/funcs.f90 src/fortran/hbond-finder.f90
 	cat module/hba_header module/path.include > module/hba.lua
 	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hba src/fortran/funcs.f90  src/fortran/hbond-finder.f90
 	ln -s $(HOMEPATH)/src/python/mark_acceptors.py bin/
+	ln -s $(HOMEPATH)/src/python/pull_atoms.py bin/
 	chmod 777 bin/*
 
 hyd: src/fortran/hydration-shell.f90
