@@ -73,7 +73,7 @@ program hyd_shell
 
   ! Open Log File
   open(20,file='hydration_shell.log')
-  write(20,*) "Beginning gofr calculation"
+  write(20,*) "Beginning hydration calculation"
   open(21,file='hydration-list.dat')
   
   ! Read Input File
@@ -157,7 +157,7 @@ program hyd_shell
         endif
       enddo lips
       ! Map info for current water
-      atmp = atom_map(int(curr_hydr(wc,1)),1)
+      atmp = atom_map(int(curr_hydr(wc,1)),2)
       if (atmp == 1) then
         Cocc = Cocc + 1
       else if (atmp == 2) then
