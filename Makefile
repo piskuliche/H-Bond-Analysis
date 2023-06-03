@@ -1,5 +1,5 @@
 FC=gfortran
-FCFLAGS=-Ofast -fopenmp
+FCFLAGS=-Ofast -fopenmp 
 HOMEPATH=$(PWD)
 
 lb_gmx_inc=/usr2/postdoc/piskulic/Software/gmxfort/libgmxfort-master/bin/include
@@ -21,5 +21,5 @@ hba: src/fortran/funcs.f90 src/fortran/hbond-finder.f90
 	chmod 777 bin/*
 
 hyd: src/fortran/hydration-shell.f90
-	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hyd src/fortran/funcs.f90 src/fortran/hydration-shell.f90
+	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hyd src/fortran/funcs.f90 src/fortran/hydr_module.f90 src/fortran/hydration-shell.f90
 	chmod 777 bin/*
