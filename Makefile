@@ -2,8 +2,8 @@ FC=gfortran
 FCFLAGS=-Ofast -fopenmp 
 HOMEPATH=$(PWD)
 
-lb_gmx_inc=/usr2/postdoc/piskulic/Software/gmxfort/libgmxfort-master/bin/include
-lb_gmx_lib=/usr2/postdoc/piskulic/Software/gmxfort/libgmxfort-master/bin/lib
+lb_gmx_inc=/home/piskuliche/Software/libgmxfort/bin/include
+lb_gmx_lib=/home/piskuliche/Software/libgmxfort/bin/lib
 
 all: hba hyd
 

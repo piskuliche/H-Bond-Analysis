@@ -39,7 +39,7 @@ program hyd_shell
 
   ! Open Output File
   do i=1, num_components
-    write(filename,'(a,i0,a,i0,a)') 'hydration_shell_',i,'_',iname,'.dat'
+    write(filename,'(a,i0,a)') 'hydration_shell_',i,'.dat'
     open(100+i,file=trim(filename),status='replace')
   enddo
   

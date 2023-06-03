@@ -145,6 +145,7 @@ contains
     allocate(num_acc_sites_per_mol(num_components))
     allocate(component_start(num_components))
     allocate(is_mem_component(num_components))
+    allocate(crit(4*num_components))
     allocate(criteria(4*num_components))
     allocate(num_heavy(num_components))
     allocate(atoms_per_component(num_components))
@@ -207,6 +208,7 @@ contains
     
     close(10)
     
+    deallocate(crit)
     
   end subroutine Alt_Hyd_Input
 
