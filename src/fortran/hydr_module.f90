@@ -3,13 +3,14 @@ module hydr_module
   public
 contains
 
-  subroutine Find_Hydr(r1, r2, num_r2, L, atom_map, criteria, hydration)
+  subroutine Find_Hydr(r1, r2, num_r2, comp_num, L, atom_map, criteria, hydration)
     ! Finds the closest water to atoms in the given group
     
     ! Args:
     ! r1 - coordinates of the atoms in the first group (3)
     ! r2 - coordinates of the atoms in the second group (num_r2,3)
     ! num_r2 - number of atoms in the second group
+    ! comp_num - the component number of the second group
     ! L - box dimensions (3,3)
     ! atom_map - mapping of the atoms in the second group to the first (num_r2,2)
     ! criteria - criteria for the atoms in the second group (num_types - assumed)
@@ -26,21 +27,20 @@ contains
 
     use myfuncs
     implicit none
-    integer, intent(in) :: num_r2
+    integer, intent(in) :: num_r2, comp_num
     real, dimension(:), intent(in) :: r1
     real, dimension(:,:), intent(in) :: r2, L
     integer, dimension(:,:), intent(in) :: atom_map
-    real, dimension(:), intent(in) :: criteria
+    real, dimension(:,:), intent(in) :: criteria
     real, dimension(:), intent(inout) :: hydration
  
     integer :: i
-    real :: roxsq
-
+    real :: roxsq 
     ! Loop over all the atoms in the second group
     do i = 1, num_r2
       ! Calculate the squared distance between the two atoms (with PBC)
       roxsq = distance2(r1, r2(i,:), L)
-      if (roxsq <= criteria(atom_map(i,2))) then
+      if (roxsq <= criteria(comp_num, atom_map(i,2))) then
         if (hydration(2) > 0.0) then
           if (roxsq < hydration(2)) then
             hydration(1) = i
@@ -82,26 +82,35 @@ contains
     integer, dimension(:), intent(in) :: num_heavy, num_atoms, component_start
     integer, dimension(:,:,:), intent(inout) :: atom_map
 
+    write(*,*) "Generating the atom map"
+
     atom_map = 0
     open(12, file='map_of_heavy_atoms.info', status='old')
     do i = 1, size(num_heavy)
+        write(*,*) "Mapping Component: ", i
+        write(*,*) "With ", num_heavy(i), " heavy atoms"
+        write(*,*) "And ", num_atoms(i), " total atoms"
+        write(*,*) "Component starts at atom: ", component_start(i)
         cnt = 0
         do j = 1, num_atoms(i)
-            read(12,*) atom_type
-            if (atom_type /= 0) then
-                atom_map(i,cnt,1) = j + component_start(j)
-                atom_map(i,cnt,2) = atom_type
-                cnt = cnt + 1
-                endif
-        enddo
-        if ( cnt /= num_heavy(i) ) then
+          if ( cnt > num_heavy(i) ) then
             write(*,*) "Error: Number of heavy atoms does not match the number of acceptor sites per molecule"
             write(*,*) "Number of heavy atoms: ", cnt
             write(*,*) "Number of acceptor sites per molecule: ", num_heavy(i)
             write(*,*) "Component: ", i
             stop
-        endif
+          endif
+          read(12,*) atom_type
+          if (atom_type /= 0) then
+            cnt = cnt + 1
+            atom_map(i,cnt,1) = j + component_start(i)
+            atom_map(i,cnt,2) = atom_type
+          endif
+        enddo
+        
     enddo 
+
+    write(*,*) "Finished generating the atom map"
 
   end subroutine Generate_Atom_Map
 
@@ -112,22 +121,21 @@ contains
                             , is_water, criteria)
     implicit none
 
-    integer :: i
+    integer :: i, j
     integer :: frame_start, frame_stop
     integer :: num_components, atom_count
     integer :: is_water
     integer :: check_if_water
 
-
-    real :: dr
-
     integer, allocatable :: component_label(:), num_mol(:), atoms_per_mol(:), num_acc_sites_per_mol(:)
     integer, allocatable :: component_start(:), is_mem_component(:), num_heavy(:)
     integer, allocatable :: atoms_per_component(:)
     
-    real, allocatable :: criteria(:), crit(:)
+    real, allocatable :: criteria(:,:), crit(:,:)
 
     character(len=40) :: fname, iname
+
+    write(*,*) "Reading in the input file"
 
     open(10,file='hydration.in',status='old')
     read(10,*)
@@ -135,7 +143,7 @@ contains
     read(10,*)
     read(10,*) frame_start,frame_stop
     read(10,*)
-    read(10,*) dr, num_components
+    read(10,*) num_components
     read(10,*)
 
     ! Allocate Component based arrays
@@ -145,8 +153,8 @@ contains
     allocate(num_acc_sites_per_mol(num_components))
     allocate(component_start(num_components))
     allocate(is_mem_component(num_components))
-    allocate(crit(4*num_components))
-    allocate(criteria(4*num_components))
+    allocate(crit(num_components,4))
+    allocate(criteria(num_components,4))
     allocate(num_heavy(num_components))
     allocate(atoms_per_component(num_components))
 
@@ -198,17 +206,21 @@ contains
     ! Read in the solvation shell criteria
     crit = 0.0; criteria = 0.0
     do i=1, num_components
-      read(10,*) crit((i-1)*4+1), crit((i-1)*4+2), crit((i-1)*4+3), crit((i-1)*4+4)
+      read(10,*) crit(i,1), crit(i,2), crit(i,3), crit(i,4)
     enddo
     
     ! Square the criteria and store
-    do i=1, 4*num_components
-      criteria(i) = crit(i)*crit(i)
+    do i=1, num_components
+      do j=1, 4
+        criteria(i,j) = crit(i,j)*crit(i,j)
+      enddo
     enddo
     
     close(10)
     
     deallocate(crit)
+
+    write(*,*) "Finished reading in the input file"
     
   end subroutine Alt_Hyd_Input
 

@@ -1,5 +1,5 @@
 FC=gfortran
-FCFLAGS=-Ofast -fopenmp 
+FCFLAGS=-Ofast -fopenmp -std=f2008
 HOMEPATH=$(PWD)
 
 lb_gmx_inc=/home/piskuliche/Software/libgmxfort/bin/include
@@ -18,6 +18,7 @@ hba: src/fortran/funcs.f90 src/fortran/hbond-finder.f90
 	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hba src/fortran/funcs.f90  src/fortran/hbond-finder.f90
 	ln -s $(HOMEPATH)/src/python/mark_acceptors.py bin/
 	ln -s $(HOMEPATH)/src/python/pull_atoms.py bin/
+	ln -s $(HOMEPATH)/src/python/generate_atom_map.py bin/
 	chmod 777 bin/*
 
 hyd: src/fortran/hydration-shell.f90
