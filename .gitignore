@@ -2,3 +2,4 @@ bin/
 *.mod
 module/path.include
 module/hba.lua
+tests/*
