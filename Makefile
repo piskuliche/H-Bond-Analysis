@@ -19,6 +19,7 @@ hba: src/fortran/funcs.f90 src/fortran/hbond-finder.f90
 	ln -s $(HOMEPATH)/src/python/mark_acceptors.py bin/
 	ln -s $(HOMEPATH)/src/python/pull_atoms.py bin/
 	ln -s $(HOMEPATH)/src/python/generate_atom_map.py bin/
+	ln -s $(HOMEPATH)/src/python/setup_analysis.py bin/
 	chmod 777 bin/*
 
 hyd: src/fortran/hydration-shell.f90
