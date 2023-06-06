@@ -285,7 +285,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         ax.set_yticklabels(np.arange(lower,upper,10).astype(int))
         # Save the figure
         plt.tight_layout()
-        plt.savefig("%s"%(filename))
+        plt.savefig("%s"%(filename), **kwargs)
         plt.close()
         return
     
