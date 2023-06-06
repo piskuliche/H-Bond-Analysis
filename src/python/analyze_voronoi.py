@@ -310,7 +310,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
                         print("Overlap found")
                         print("Correcting...")
                         print("Note: This is a hacky fix, but it works for now")
-                        r[k] = [coord2[0]+0.0001, coord2[1]+0.0001]
+                        r[k] = [coord2[0]+0.0001, coord2[1]+0.0001, 0]
         if overlap_found == True:
             r = _CHECK_OVERLAPS(r, iter=iter+1)
         if iter > 50:
