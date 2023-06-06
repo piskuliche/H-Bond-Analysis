@@ -324,7 +324,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
 
             # Plot the diagram on the plot_everyth frame
             if frame % plot_every == 0:
-                pngname = "%sframe_%d.png"%(lfdirs[i],frame_index,i)
+                pngname = "%sframe_%d.png"%(lfdirs[i],frame_index)
                 _plot_voronoi_diagram(pngname, box, cells, occupancy, lf_xy, laur_xy, ps_xy, upper=50, lower=-50)
 
     return voronoi_data
@@ -333,7 +333,7 @@ def Do_Files(toploc="gro/", trjloc="xtc/", trjprefix='step7_', fstart=1, fstop=5
              leafsel="(resname POPC and name P*)", laursel="(resname LAUR and name O*)"):
     """
     """
-    import pickle
+    import pickle, traceback
     Setup_Safe_Directory("voronoi_plots/")
     Setup_Safe_Directory("voronoi_plots/first_leaf/")
     Setup_Safe_Directory("voronoi_plots/second_leaf/")
@@ -350,8 +350,9 @@ def Do_Files(toploc="gro/", trjloc="xtc/", trjprefix='step7_', fstart=1, fstop=5
             # Voronoi Tesselation
             voronoi_data = Generate_Voronoi_Diagrams(u, first_leaf, second_leaf, ps_selection="resname STYRR and name C1", ifile=ifile)
             pickle.dump(voronoi_data, open("voronoi_data.pckl",'wb'))
-        except:
+        except Exception as e:
             print("Failed to do file: ", ifile)
+            traceback.print_exc()
             continue
 
     return
