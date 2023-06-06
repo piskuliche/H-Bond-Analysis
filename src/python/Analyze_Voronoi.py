@@ -212,8 +212,8 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
                         outx[count]=np.append(outx[count],x[splits[i]-1]+dx[i])
                         outy[count]=np.append(outy[count],y[splits[i]-1]+dy[i])
                     else:
-                        outx[count] = np.array(x[splits[i-1]-1]+dx[i-1])
-                        outy[count] = np.array(y[splits[i-1]-1]+dy[i-1])
+                        outx[count] = np.array(x[splits[i-1]]-dx[i-1])
+                        outy[count] = np.array(y[splits[i-1]]-dy[i-1])
                         outx[count]=np.append(outx[count],x[splits[i-1]:splits[i]])
                         outy[count]=np.append(outy[count],y[splits[i-1]:splits[i]])
                         outx[count]=np.append(outx[count],x[splits[i]-1]+dx[i])
