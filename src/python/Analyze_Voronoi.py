@@ -323,7 +323,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             voronoi_data[frame_index][i]['atomindex'] = leaf.indices
 
             # Plot the diagram on the plot_everyth frame
-            if frame % plot_every == 0:
+            if frame_index % plot_every == 0:
                 pngname = "%sframe_%d.png"%(lfdirs[i],frame_index)
                 _plot_voronoi_diagram(pngname, freud_box, box, cells, occupancy, lf_xy, laur_xy, ps_xy, upper=50, lower=-50)
 
