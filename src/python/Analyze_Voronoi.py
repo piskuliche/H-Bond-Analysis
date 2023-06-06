@@ -73,8 +73,7 @@ def Voronoi_Plot(box, polytopes, occ=None, ax=None, color_by_sides=True, cmap=No
     return ax
 
 
-def Analyze_Leaflets(mda_U, first_leaf=[], second_leaf=[],
-                     selection="(resname POPC and name P*)",
+def Analyze_Leaflets(mda_U, selection="(resname POPC and name P*)",
                      extra_sel = None):
     """ This function takes a MDAnalysis universe and returns the leaflets of the membrane.
 
@@ -88,6 +87,10 @@ def Analyze_Leaflets(mda_U, first_leaf=[], second_leaf=[],
     Returns:
         leaflets (list): A list of the leaflets
     """
+
+    from MDAnalysis.analysis.leaflet import LeafletFinder
+    from sklearn.cluster import KMeans
+
     def _get_leaflet(mda_U, selection, periodicity=True):
         #This function takes a MDAnalysis universe and returns the leaflets of the membrane.
         atom_selection=mda_U.select_atoms(selection)
@@ -115,9 +118,7 @@ def Analyze_Leaflets(mda_U, first_leaf=[], second_leaf=[],
         return leafgroup1, leafgroup2
     
 
-    from MDAnalysis.analysis.leaflet import LeafletFinder
-    from sklearn.cluster import KMeans
-
+    first_leaf, second_leaf = [], []
     for ts in mda_U.trajectory:
         # Grabs the leaflets
         l1, l2 = _get_leaflet(mda_U, selection)
@@ -129,8 +130,20 @@ def Analyze_Leaflets(mda_U, first_leaf=[], second_leaf=[],
     return first_leaf, second_leaf
         
 
-def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None, ifile=1):
-    """
+def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None, ifile=1, plot_every=50):
+    """This takes the leaflets and generates Voronoi diagrams for each frame.
+
+    Args:
+        mda_U (MDAnalysis universe): The universe to analyze
+        first_leaf (list): The first leaflet - must have same # frames
+        second_leaf (list): The second leaflet - must have same # frames
+        ps_selection (str): The selection for the PS points
+        ifile (int): The file number being analyzed - for indexing the output dictionary
+        plot_every (int): The number of frames to skip between plotting and saving voronoi diagrams
+
+    Returns:
+        voronoi_data (dict): A dictionary containing the voronoi diagrams for each frame
+
     """
     import freud
 
@@ -217,8 +230,66 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
                 count += 1
         return outx, outy
 
+    def _plot_voronoi_diagram(filename, box, cells, occupancy, lf_xy, 
+                              laur_xy=None, ps_xy=None, upper=50, lower=-50, 
+                              **kwargs):
+        """ Plots the voronoi diagram for a given frame
 
+        Args:
+            filename (str): The name of the file to save the plot to
+            box (tuple): The box dimensions
+            cells (freud voronoi object): The voronoi object for the frame
+            occupancy (np.array): The occupancy of each cell
+            lf_xy (np.array): The leaflet points
+            laur_xy (np.array): The laurdan points
+            ps_xy (np.array): The ps points
+            upper (float): The upper dimension
+            lower (float): The lower dimension
+            **kwargs: Keyword arguments for the matplotlib figure
+        
+        Returns:
+            None
 
+        """
+        fig = plt.figure(**kwargs)
+        ax = plt.gca()
+        if ps_xy is None:
+            Voronoi_Plot(box, cells.polytopes, occ=None, ax=ax)
+        else:
+            Voronoi_Plot(box, cells.polytopes, occ=occupancy, ax=ax)
+            e_x = ps_xy[:,0]; e_y = ps_xy[:,1]
+            ax.scatter(e_x, e_y, s=20, c='blue')
+            xs = np.reshape(e_x, (-1, 10)); ys = np.reshape(e_y, (-1, 10))
+            # Modify xs and ys to account for periodicity
+            plt_x, plt_y = _reshape_2d_array_by_splits(xs, ys, box[0], box[1])
+            for xi,yi in zip(plt_x, plt_y):
+                ax.plot(plt_x[xi],plt_y[yi], c='blue')
+        # Plot the leaflet points
+        ax.scatter(lf_xy[:,0],lf_xy[:,1], s=10, c='k')
+        if laur_xy is not None:
+            # Plot the laurdan points
+            ax.scatter(laur_xy[:,0],laur_xy[:,1], s=15, c='red')
+        # Set the axis limits
+        #lower, upper = -box[0]/2-10, box[0]/2+10
+        #lower, upper = np.round(lower/10)*10, np.round(upper/10)*10
+        ax.set_xlim((lower,upper))
+        ax.set_ylim((lower,upper))
+        # Set the axis labels
+        ax.set_xlabel("x (nm)")
+        ax.set_ylabel("y (nm)")
+        # Set axis ticks
+        ax.set_xticks(np.arange(lower,upper,10))
+        ax.set_yticks(np.arange(lower,upper,10))
+        # Set the axis tick labels
+        ax.set_xticklabels(np.arange(lower,upper,10).astype(int))
+        ax.set_yticklabels(np.arange(lower,upper,10).astype(int))
+        # Save the figure
+        plt.tight_layout()
+        plt.savefig("%s"%(filename), dpi=dpi)
+        plt.close()
+        return
+    
+    voronoi_data = {}
     ps_xy = None
     nframes = len(mda_U.trajectory)
     # Loop over the trajectory
@@ -231,8 +302,9 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         if ps_selection is not None: ps_xy = _grab_ps_points(mda_U, ps_selection, freud_box)
         lfdirs = ["voronoi_plots/first_leaf/","voronoi_plots/second_leaf/"]
         
+        voronoi_data[frame_index] = {0:{},1:{}}
         # Work on both leaflets
-        for i, leaf in enumerate([first_leaf[frame_index], second_leaf[frame_index]]):
+        for i, leaf in enumerate([first_leaf[frame], second_leaf[frame]]):
             # Grab the leaflet points
             lf_xy = _grab_leaf_points(leaf,freud_box)
             # Grab LAUR points
@@ -245,68 +317,43 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             # Compute the diagram
             vor = freud.locality.Voronoi(freud_box, lf_xy)
             cells = vor.compute((freud_box,lf_xy))
-            # Plot the diagram
-            fig = plt.figure(figsize=(4,4), dpi=300)
-            ax = plt.gca()
-            if ps_xy is None:
-                Voronoi_Plot(freud_box, cells.polytopes, occ=None, ax=ax)
-            else:
-                Voronoi_Plot(freud_box, cells.polytopes, occ=occupancy, ax=ax)
-                ps_x=ps_xy[:,0]; ps_y=ps_xy[:,1]
-                ax.scatter(ps_x, ps_y, s=20, c='blue')
-                # Reshape the xs and ys
-                xs = np.reshape(ps_x, (-1, 10)); ys = np.reshape(ps_y, (-1, 10))
-                # Modify xs and ys to account for periodicity
-                plt_x, plt_y = _reshape_2d_array_by_splits(xs, ys, box[0], box[1])
-                for xi,yi in zip(plt_x, plt_y):
-                    ax.plot(plt_x[xi],plt_y[yi], c='blue')
-            # Plot the leaflet points
-            ax.scatter(lf_xy[:,0],lf_xy[:,1], s=10, c='k')
-            # Plot the laurdan points
-            ax.scatter(laur_xy[:,0],laur_xy[:,1], s=15, c='red')
-            # Set the axis limits
-            #lower, upper = -box[0]/2-10, box[0]/2+10
-            #lower, upper = np.round(lower/10)*10, np.round(upper/10)*10
-            lower, upper = -50, 50
-            ax.set_xlim((lower,upper))
-            ax.set_ylim((lower,upper))
-            # Set the axis labels
-            ax.set_xlabel("x (nm)")
-            ax.set_ylabel("y (nm)")
-            # Set axis ticks
-            ax.set_xticks(np.arange(lower,upper,10))
-            ax.set_yticks(np.arange(lower,upper,10))
-            # Set the axis tick labels
-            ax.set_xticklabels(np.arange(lower,upper,10).astype(int))
-            ax.set_yticklabels(np.arange(lower,upper,10).astype(int))
-            # Save the figure
-            plt.tight_layout()
-            plt.savefig("%sframe_%d.png"%(lfdirs[i],frame_index), dpi=300)
-            plt.close()
-    return
+            areas  = cells.volumes
+            voronoi_data[frame_index][i]['areas'] = areas
+            voronoi_data[frame_index][i]['occupancy'] = occupancy
+            voronoi_data[frame_index][i]['atomindex'] = leaf.indices
+
+            # Plot the diagram on the plot_everyth frame
+            if frame % plot_every == 0:
+                pngname = "%sframe_%d.png"%(lfdirs[i],frame_index,i)
+                _plot_voronoi_diagram(pngname, box, cells, occupancy, lf_xy, laur_xy, ps_xy, upper=50, lower=-50)
+
+    return voronoi_data
 
 def Do_Files(toploc="gro/", trjloc="xtc/", trjprefix='step7_', fstart=1, fstop=5,
              leafsel="(resname POPC and name P*)", laursel="(resname LAUR and name O*)"):
     """
     """
+    import pickle
     Setup_Safe_Directory("voronoi_plots/")
     Setup_Safe_Directory("voronoi_plots/first_leaf/")
     Setup_Safe_Directory("voronoi_plots/second_leaf/")
-    first_leaf, second_leaf = [], []
     # Loop Over Files
     for ifile in range(fstart, fstop+1):
         print("Doing file: ", ifile)
         topfile = toploc + trjprefix + str(ifile) + ".gro"
         trjfile = trjloc + trjprefix + str(ifile) + ".xtc"
-        # Load Universe
-        u = mda.Universe(topfile, trjfile)
-        # Analyze Leaflets
-        first_leaf, second_leaf = Analyze_Leaflets(u, first_leaf, second_leaf,
-                                                    selection=leafsel, extra_sel=laursel)
-        # Voronoi Tesselation
-        Generate_Voronoi_Diagrams(u, first_leaf, second_leaf, ps_selection="resname STYRR and name C1", ifile=ifile)
+        try:
+            # Load Universe
+            u = mda.Universe(topfile, trjfile)
+            # Analyze Leaflets
+            first_leaf, second_leaf = Analyze_Leaflets(u, selection=leafsel, extra_sel=laursel)
+            # Voronoi Tesselation
+            voronoi_data = Generate_Voronoi_Diagrams(u, first_leaf, second_leaf, ps_selection="resname STYRR and name C1", ifile=ifile)
+            pickle.dump(voronoi_data, open("voronoi_data.pckl",'wb'))
+        except:
+            print("Failed to do file: ", ifile)
+            continue
 
-        
     return
 
 def Setup_Safe_Directory(dirname):
