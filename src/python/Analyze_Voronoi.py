@@ -148,6 +148,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
     import freud
 
     def _grab_ps_points(mda_U, ps_selection, fbox):
+        # Grabs the PS xy coordinates and sets z to 0
         ps_atoms = mda_U.select_atoms(ps_selection)
         ps_points = ps_atoms.center_of_mass(wrap=True, compound='residues')
         ps_points[:,2] = 0.0
@@ -155,12 +156,14 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         return ps_points
     
     def _grab_leaf_points(leaf, fbox):
+        # Grabs the leaflet points and sets z to 0
         points = leaf.positions
         points[:,2] = 0.0
         points = fbox.wrap(points)
         return points
     
     def _check_occupancy(points, points2, fbox):
+        # Checks the occupancy of the voronoi cells
         if points2 is None: return None
         dist = fbox.compute_all_distances(points2, points)
         cell_occupancy = np.zeros(np.shape(dist)[1])
@@ -170,6 +173,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         return cell_occupancy
     
     def _compare_occupancy(occ1, occ2):
+        # Compares the occupancy of the two leaflets
         if occ1 is None or occ2 is None:
             if occ1 is None:
                 return occ2*2
@@ -181,6 +185,9 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         return both
 
     def _check_array_periodicity(x, y, Lx, Ly):
+        # Checks the periodicity of the array
+        # Corrects the periodicity if there is a problem (aka crosses the boundary)
+        # This makes it so matplotlib can plot the line across the border rather than across the box.
         splits, dxs, dys = [], [], []
         for i in range(1,len(x)):
             dx = x[i]-x[i-1]
@@ -367,4 +374,4 @@ def Setup_Safe_Directory(dirname):
     
 
 if __name__ == "__main__":
-    Do_Files(leafsel="(resname POPC and name P*)")
+    Do_Files(leafsel="(resname POPC and name P*)", fstop=10)
