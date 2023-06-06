@@ -232,7 +232,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
 
     def _plot_voronoi_diagram(filename, fbox, box, cells, occupancy, lf_xy, 
                               laur_xy=None, ps_xy=None, upper=50, lower=-50, 
-                              **kwargs):
+                              figsize=(4,4), dpi=300):
         """ Plots the voronoi diagram for a given frame
 
         Args:
@@ -251,7 +251,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             None
 
         """
-        fig = plt.figure(**kwargs)
+        fig = plt.figure(figsize=figsize, dpi=dpi)
         ax = plt.gca()
         if ps_xy is None:
             Voronoi_Plot(fbox, cells.polytopes, occ=None, ax=ax)
@@ -285,7 +285,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         ax.set_yticklabels(np.arange(lower,upper,10).astype(int))
         # Save the figure
         plt.tight_layout()
-        plt.savefig("%s"%(filename), **kwargs)
+        plt.savefig("%s"%(filename), dpi=dpi)
         plt.close()
         return
     
@@ -329,7 +329,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
 
     return voronoi_data
 
-def Do_Files(toploc="gro/", trjloc="xtc/", trjprefix='step7_', fstart=1, fstop=5,
+def Do_Files(toploc="gro/", trjloc="xtc/", trjprefix='step7_', fstart=1, fstop=10,
              leafsel="(resname POPC and name P*)", laursel="(resname LAUR and name O*)"):
     """
     """
