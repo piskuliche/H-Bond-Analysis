@@ -230,7 +230,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
                 count += 1
         return outx, outy
 
-    def _plot_voronoi_diagram(filename, box, cells, occupancy, lf_xy, 
+    def _plot_voronoi_diagram(filename, fbox, box, cells, occupancy, lf_xy, 
                               laur_xy=None, ps_xy=None, upper=50, lower=-50, 
                               **kwargs):
         """ Plots the voronoi diagram for a given frame
@@ -254,9 +254,9 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         fig = plt.figure(**kwargs)
         ax = plt.gca()
         if ps_xy is None:
-            Voronoi_Plot(box, cells.polytopes, occ=None, ax=ax)
+            Voronoi_Plot(fbox, cells.polytopes, occ=None, ax=ax)
         else:
-            Voronoi_Plot(box, cells.polytopes, occ=occupancy, ax=ax)
+            Voronoi_Plot(fbox, cells.polytopes, occ=occupancy, ax=ax)
             e_x = ps_xy[:,0]; e_y = ps_xy[:,1]
             ax.scatter(e_x, e_y, s=20, c='blue')
             xs = np.reshape(e_x, (-1, 10)); ys = np.reshape(e_y, (-1, 10))
@@ -285,7 +285,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         ax.set_yticklabels(np.arange(lower,upper,10).astype(int))
         # Save the figure
         plt.tight_layout()
-        plt.savefig("%s"%(filename), dpi=dpi)
+        plt.savefig("%s"%(filename))
         plt.close()
         return
     
@@ -325,7 +325,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             # Plot the diagram on the plot_everyth frame
             if frame % plot_every == 0:
                 pngname = "%sframe_%d.png"%(lfdirs[i],frame_index)
-                _plot_voronoi_diagram(pngname, freud_box, cells, occupancy, lf_xy, laur_xy, ps_xy, upper=50, lower=-50)
+                _plot_voronoi_diagram(pngname, freud_box, box, cells, occupancy, lf_xy, laur_xy, ps_xy, upper=50, lower=-50)
 
     return voronoi_data
 
