@@ -338,10 +338,29 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
 
 def Do_Files(toploc="gro/", trjloc="xtc/", trjprefix='step7_', fstart=1, fstop=10,
              leafsel="(resname POPC and name P*)", laursel="(resname LAUR and name O*)"):
-    """
+    """ This function loops over the files and does the voronoi/leaflet analysis
+
+    Args:
+        toploc (str): The location of the topology files
+        trjloc (str): The location of the trajectory files
+        trjprefix (str): The prefix of the trajectory files
+        fstart (int): The starting file number
+        fstop (int): The ending file number
+        leafsel (str): The selection string for the leaflet atoms
+        laursel (str): The selection string for the laurdan atoms
+
+    Returns:
+        None
+
+    Generates:
+        voronoi_plots/first_leaf/frame_*.png
+        voronoi_plots/second_leaf/frame_*.png
+        voronoi_plots/data/vor_*.pkl
+        
     """
     import pickle, traceback
     Setup_Safe_Directory("voronoi_plots/")
+    Setup_Safe_Directory("voronoi_plots/data/")
     Setup_Safe_Directory("voronoi_plots/first_leaf/")
     Setup_Safe_Directory("voronoi_plots/second_leaf/")
     # Loop Over Files
@@ -356,7 +375,7 @@ def Do_Files(toploc="gro/", trjloc="xtc/", trjprefix='step7_', fstart=1, fstop=1
             first_leaf, second_leaf = Analyze_Leaflets(u, selection=leafsel, extra_sel=laursel)
             # Voronoi Tesselation
             voronoi_data = Generate_Voronoi_Diagrams(u, first_leaf, second_leaf, ps_selection="resname STYRR and name C1", ifile=ifile)
-            pickle.dump(voronoi_data, open("voronoi_data.pckl",'wb'))
+            pickle.dump(voronoi_data, open("voronoi_plots/data/vor_%d.pckl"%ifile,'wb'))
         except Exception as e:
             print("Failed to do file: ", ifile)
             traceback.print_exc()
@@ -374,4 +393,4 @@ def Setup_Safe_Directory(dirname):
     
 
 if __name__ == "__main__":
-    Do_Files(leafsel="(resname POPC and name P*)", fstop=10)
+    Do_Files(leafsel="(resname POPC and name P*)", fstop=100)
