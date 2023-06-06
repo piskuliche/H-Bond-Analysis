@@ -297,6 +297,27 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         plt.close()
         return
     
+    def _CHECK_OVERLAPS(r, iter=0):
+        # Check for overlaps and correct them
+        import sys
+        overlap_found=False
+        for j, coord1 in enumerate(r):
+            for k, coord2 in enumerate(r):
+                if j != k:
+                    a = (coord1[0], coord1[1])
+                    b = (coord2[0], coord2[1])
+                    if a == b:
+                        print("Overlap found")
+                        print("Correcting...")
+                        print("Note: This is a hacky fix, but it works for now")
+                        r[k] = [coord2[0]+0.0001, coord2[1]+0.0001]
+        if overlap_found == True:
+            r = _CHECK_OVERLAPS(r, iter=iter+1)
+        if iter > 50:
+            print("Too many overlaps found. Exiting...")
+            sys.exit()
+        return r
+    
     voronoi_data = {}
     ps_xy = None
     nframes = len(mda_U.trajectory)
@@ -322,6 +343,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             ps_occupancy = _check_occupancy(lf_xy, ps_xy, freud_box)
             la_occupancy = _check_occupancy(lf_xy, laur_xy, freud_box)
             occupancy = _compare_occupancy(ps_occupancy, la_occupancy)
+            lf_xy = _CHECK_OVERLAPS(lf_xy)
             # Compute the diagram
             vor = freud.locality.Voronoi(freud_box, lf_xy)
             cells = vor.compute((freud_box,lf_xy))
