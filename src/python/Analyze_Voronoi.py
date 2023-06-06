@@ -325,7 +325,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             # Plot the diagram on the plot_everyth frame
             if frame % plot_every == 0:
                 pngname = "%sframe_%d.png"%(lfdirs[i],frame_index)
-                _plot_voronoi_diagram(pngname, box, cells, occupancy, lf_xy, laur_xy, ps_xy, upper=50, lower=-50)
+                _plot_voronoi_diagram(pngname, freud_box, cells, occupancy, lf_xy, laur_xy, ps_xy, upper=50, lower=-50)
 
     return voronoi_data
 
