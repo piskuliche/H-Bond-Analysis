@@ -102,7 +102,7 @@ def Analyze_Leaflets(mda_U, selection="(resname POPC and name P*)",
         # Grab Z Positions
         z_pos = latom_select.positions[:,2]
         # Cluster using KMEANS algorithm
-        labels = KMeans(n_clusters=2).fit(z_pos.reshape(-1,1)).labels_
+        labels = KMeans(n_clusters=2, n_init=10).fit(z_pos.reshape(-1,1)).labels_
         group1, group2 = labels==0, labels==1
         # Get the leaflet groups
         laur1, laur2 = latom_select[group1], latom_select[group2]
