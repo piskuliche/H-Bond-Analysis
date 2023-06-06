@@ -254,9 +254,9 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
         fig = plt.figure(**kwargs)
         ax = plt.gca()
         if ps_xy is None:
-            Voronoi_Plot(box, cells.polytopes, occ=None, ax=ax)
+            Voronoi_Plot(fbox, cells.polytopes, occ=None, ax=ax)
         else:
-            Voronoi_Plot(box, cells.polytopes, occ=occupancy, ax=ax)
+            Voronoi_Plot(fbox, cells.polytopes, occ=occupancy, ax=ax)
             e_x = ps_xy[:,0]; e_y = ps_xy[:,1]
             ax.scatter(e_x, e_y, s=20, c='blue')
             xs = np.reshape(e_x, (-1, 10)); ys = np.reshape(e_y, (-1, 10))
