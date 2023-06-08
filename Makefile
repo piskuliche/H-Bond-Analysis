@@ -16,12 +16,12 @@ setup:
 	@echo "prepend_path('PATH', '$(HOMEPATH)/bin')" > module/path.include
 	cat module/hba_header module/path.include > module/hba.lua
 
-hba: setup src/fortran/funcs.f90 src/fortran/hbond-finder.f90 
-	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hba src/fortran/funcs.f90  src/fortran/hbond-finder.f90
+hba: setup src/fortran/funcs.f90 src/fortran/share_routine.f90 src/fortran/hydrogen-bonding.f90 
+	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hba src/fortran/funcs.f90  src/fortran/share_routine.f90 src/fortran/hbond-finder.f90
 	chmod 777 bin/*
 
-hyd: setup src/fortran/hydration-shell.f90
-	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hyd src/fortran/funcs.f90 src/fortran/hydr_module.f90 src/fortran/hydration-shell.f90
+hyd: setup src/fortran/funcs.f90 src/fortran/share_routine.f90 src/fortran/hydr_module.f90 src/fortran/hydration-shell.f90
+	$(FC) $(FCFLAGS) -I $(lb_gmx_inc) -L $(lb_gmx_lib) -lgmxfort -o bin/hyd src/fortran/funcs.f90 src/fortran/share_routine.f90 src/fortran/hydr_module.f90  src/fortran/hydration-shell.f90
 	chmod 777 bin/*
 
 py: setup 
