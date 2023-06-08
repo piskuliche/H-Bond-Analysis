@@ -2,6 +2,7 @@ program hyd_shell
   use hydr_module
   use gmxfort_trajectory
   use myfuncs
+  use share_routine
   implicit none
 
   type (Trajectory) :: trj
@@ -20,6 +21,7 @@ program hyd_shell
   real, allocatable :: closest_hydr(:,:,:)
   character(len=100) :: filename
   integer, allocatable :: atoms_per_component(:)
+  character(len=40) :: mapfile
 
 
 
@@ -32,7 +34,7 @@ program hyd_shell
   
   ! Read Input File
   ! Note - allocates num_heavy, component_start, criteria
-  call Alt_Hyd_Input(frame_start, frame_stop, fname, iname &
+  call Alt_Hyd_Input(mapfile, frame_start, frame_stop, fname, iname &
                           , num_components, num_heavy, component_start &
                           , atoms_per_component &
                           , is_water, criteria)
@@ -58,9 +60,8 @@ program hyd_shell
   closest_hydr = 0.0
   occupancy = 0
 
-
-  ! TODO: Need to Check Past this point
-  call Generate_Atom_Map(atoms_per_component, component_start, num_heavy, atom_map)
+  ! Call Generate_Atom_Map
+  call Generate_Atom_Map(mapfile, atoms_per_component, component_start, num_heavy, atom_map)
 
   ! Open Trajectory
   call trj%open(trim(fname),trim(iname))
@@ -88,8 +89,8 @@ program hyd_shell
     ! Assign membrane Atoms using the atom map
     ! The atom_map is a DD array that points to the atom index and type
     ! Should be 1 entry for each heavy atom (including water O) in order of structure
-    comps: do j=1,num_components
-      heavs: do k=1,num_heavy(j)
+    comps: do j=1, num_components
+      heavs: do k=1, num_heavy(j)
         ! Check that the atom_map is properly initialized
         if (atom_map(j,k,1) == 0) then
           write(*,*) "Error: atom_map is not properly initialized"
