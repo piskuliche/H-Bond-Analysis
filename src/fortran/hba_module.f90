@@ -16,10 +16,11 @@ contains
         integer :: check_if_water, atom_count
 
         real, allocatable :: criteria(:,:)
+        real :: pi
 
         character(len=40) :: mapfile, fname, iname
 
-
+        pi = 4.D0*DATAN(1.D0)
 
         open(10, file='hbonding.in', status='old')
         read(10,*)
@@ -37,6 +38,7 @@ contains
         allocate(atoms_per_component(num_components))
         allocate(component_start(num_components))
         allocate(criteria(num_components,3))
+        allocate(component_label(num_components))
 
         num_mol = 0; atoms_per_mol = 0; num_acc_sites_per_mol = 0
         num_acceptors = 0; atoms_per_component = 0; component_start = 0
@@ -48,7 +50,7 @@ contains
         do i=1, num_components
             check_if_water = -1
             read(10,*) component_label(i), num_mol(i), atoms_per_mol(i), num_acc_sites_per_mol(i)
-            read(10,*) is_water
+            read(10,*) check_if_water
 
             ! Check if the component is a water molecule
             if ( check_if_water == 1 ) then
@@ -58,9 +60,9 @@ contains
                     write(*,*) "To solve this error, run the code individually"
                     write(*,*) "For each water component"
                 endif
-                if ( num_acc_sites_per_mol(i) /= 1 ) then
-                    write(*,*) "Error: Water molecules must have one site per molecule!"
-                    write(*,*) "This should be placed on the Oxygen atom"
+                if ( num_acc_sites_per_mol(i) /= 3 ) then
+                    write(*,*) "Error: Water molecules must have three sites per molecule!"
+                    write(*,*) "Oxygen should be labeled 1, hydrogens labeled 2"
                     stop
                 endif
                 is_water = i
@@ -76,6 +78,7 @@ contains
             atom_count = atom_count + atoms_per_component(i)
         end do
         read(10,*)
+        write(*,*) is_water, "is_water"
 
         ! Read in the h-bond criteria
         do i=1, num_components
@@ -83,6 +86,7 @@ contains
             read(10,*) criteria(i,1), criteria(i,2), criteria(i,3)
             criteria(i,1) = criteria(i,1)**2
             criteria(i,2) = criteria(i,2)**2
+            criteria(i,3) = criteria(i,3)*pi/180.0
         end do
 
         close(10)
@@ -101,7 +105,7 @@ contains
         real, intent(in) :: r_don(:,:), r_acc(:,:)
         real, intent(in) :: criteria(:), box(:,:)
         real :: roxsq, rhxsq, angle
-        real, dimension(num_donors, 2), intent(out) :: hydrogen_bonds
+        integer, dimension(num_donors, 2), intent(inout) :: hydrogen_bonds
         integer, intent(in) :: atom_map(:,:)
 
         ! Loop over oxygens
@@ -109,17 +113,17 @@ contains
             oindex = (i-1)*3 + 1
             acceptors: do j=1, num_acceptors
                 if ( atom_map(j,2) == 2) cycle
-                roxsq = distance2(r_don(oindex,:), r_acc(i,:), box)
+                roxsq = distance2(r_don(oindex,:), r_acc(j,:), box)
                 if ( roxsq < criteria(1) ) then
                     ! Loop over hydrogens
                     hatoms: do hi=1,2
-                        rhxsq = distance2(r_don(oindex+hi,:), r_acc(i,:), box)
+                        rhxsq = distance2(r_don(oindex+hi,:), r_acc(j,:), box)
                         if ( rhxsq < criteria(2) ) then
                             ! Calculate angle
                             angle = bond_angle(r_don(oindex+hi,:), r_don(oindex,:), r_acc(j,:), box)
                             if ( angle < criteria(3) ) then
                                 ! COUNT DATA
-                                hydrogen_bonds(i, hi) = atom_map(j,2)
+                                hydrogen_bonds(i, hi) = atom_map(j,1)
                                 ! We can exit, because a single water can only donate one hydrogen bond to a single acceptor
                                 exit hatoms
                             endif

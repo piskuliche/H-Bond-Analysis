@@ -30,7 +30,8 @@ program h_bonding
     integer, allocatable :: atom_map(:,:,:)
     real, dimension(3) :: coord = 0.0
     real, dimension(chunk_size, 3, 3) :: box
-    real, allocatable :: hydrogen_bonds(:,:,:), r(:,:,:,:)
+    integer, allocatable :: hydrogen_bonds(:,:,:)
+    real, allocatable :: r(:,:,:,:)
 
     open(20, file='hydrogen_bonding.log')
     write(20,*) 'Beginning hydrogen bonding analysis'
@@ -53,6 +54,9 @@ program h_bonding
     allocate(hydrogen_bonds(chunk_size, num_donors, 2))
 
     ! Zero Arrays
+    r = 0.0
+    atom_map=0
+    hydrogen_bonds = 0
 
     ! Map Donors and Acceptors
     call Generate_Atom_Map(mapfile, atoms_per_component, component_start, num_acceptors, atom_map)
@@ -75,7 +79,7 @@ program h_bonding
     ! ****************************************************************************************************
 
     ! Setup Chunking
-    num_frames = frame_stop - frame_start
+    num_frames = frame_stop - frame_start + 1
     nchunks = int(ceiling(real(num_frames) / real(chunk_size)))
 
     ! Chunking loop
@@ -88,25 +92,15 @@ program h_bonding
         box = 0.0
 
         ! Set the chunk loop start and stop
-        chunk_start = (chunk_idx-1)*chunk_size + 1
-        chunk_stop = chunk_idx*chunk_size
-
-        if ( chunk_stop + frame_start > frame_stop ) then
-            chunk_stop = frame_stop-chunk_start
-        endif
-
-        ! Error Test for problem with chunking
-        if ( chunk_stop < chunk_start ) then
-            write(*,*) "Error: improper chunking detected"
-            write(*,*) "chunk_start: ", chunk_start
-            write(*,*) "chunk_stop: ", chunk_stop
-            write(*,*) "chunk_idx: ", chunk_idx
-            stop 
-        endif
+        chunk_start = (chunk_idx-1)*chunk_size
+        chunk_stop = chunk_size
+        chunk_stop = min(chunk_size, num_frames - chunk_start)
 
         ! ****************** READ TRAJECTORY ******************
-        read_frames_loop: do fr_idx=chunk_start, chunk_stop
+        write(*,*) "Reading frames ", chunk_start + 1, " to ", chunk_start + chunk_stop
+        read_frames_loop: do fr_idx=1, chunk_stop
             ! Read frames
+            write(*,*) fr_idx, chunk_start + fr_idx
             ntmp = trj%read_next(1)
             box(fr_idx,:,:) = trj%box(1)
             comps_loop: do comp_idx=1, num_components
@@ -123,9 +117,9 @@ program h_bonding
         end do read_frames_loop
 
         ! ****************** CALCULATION OF HBONDS ******************
-
+        write(*,*) "Calculating hydrogen bonds"
         !$OMP PARALLEL DO SCHEDULE(DYNAMIC) DEFAULT(SHARED) PRIVATE(fr_idx, comp_idx)
-        frames_loop: do fr_idx=chunk_start, chunk_stop
+        frames_loop: do fr_idx=1, chunk_stop
             if ( do_water == 1 ) then
                 ! Do water analysis - note this is separated because it is expensive!
                 call find_h_bonds(r(fr_idx, is_water, :, :), r(fr_idx, is_water, :,:), num_mol(is_water), num_mol(is_water) &
@@ -145,7 +139,8 @@ program h_bonding
         !$OMP END PARALLEL DO
 
         ! ****************** OUTPUT DATA ******************
-        write_frames_loop: do fr_idx=chunk_start, chunk_stop
+        write(*,*) "Writing data to file"
+        write_frames_loop: do fr_idx=1, chunk_stop
             ! DO SOMETHING
             wat: do i=1, num_mol(is_water)
                 write(30,*) i, hydrogen_bonds(fr_idx, i, 1), hydrogen_bonds(fr_idx, i, 2)

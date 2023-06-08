@@ -59,7 +59,7 @@ def Read_GRO_and_Match_ACC(grofile, contribute_matches=["POPC","LAUR","TIP3"], t
                     atom_labels.append(nu_match[j])
                     found = True
             if all_atoms[i].resname == "TIP3":
-                if "OH2" in atype:
+                if "H" in atype:
                     per_type_match[resname] += 1
                     atom_labels.append(2)
                     found=True
