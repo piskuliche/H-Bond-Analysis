@@ -75,7 +75,7 @@ program h_bonding
 
     ! Setup Chunking
     num_frames = frame_stop - frame_start
-    nchunks = ceiling(num_frames / chunk_size)
+    nchunks = int(ceiling(rea(num_frames) / real(chunk_size)))
 
     ! Chunking loop
     chunks: do chunk_idx=1, nchunks
@@ -245,7 +245,7 @@ subroutine read_hb_input(mapfile, frame_start, frame_stop, fname, iname &
 
 end subroutine read_hb_input
 
-subroutine find_h_bonds(r_don, r_acc, criteria, num_donors, num_acceptors, box, atom_map, hydrogen_bonds)
+subroutine find_h_bonds(r_don, r_acc, num_donors, num_acceptors, criteria, box, atom_map, hydrogen_bonds)
     use myfuncs
     implicit none
 
