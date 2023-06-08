@@ -160,16 +160,18 @@ subroutine read_hb_input(mapfile, frame_start, frame_stop, fname, iname &
                         , num_components, num_mol, num_acceptors, component_start &
                         , atoms_per_component, is_water, do_water, criteria)
 
+    implicit none
+    
     integer :: i
-    integer, intent(out) :: frame_start, frame_stop, num_components, atom_count, is_water, do_water,
+    integer, intent(out) :: frame_start, frame_stop, num_components, atom_count, is_water, do_water
     integer, allocatable, intent(out) :: num_components(:), num_mol(:), num_acceptors(:), component_start(:), atoms_per_component(:)
-    integer, allocatable :: num_mol(:), atoms_per_mol(:), num_acc_sites_per_mol(:), component_label(:)
+    integer, allocatable :: atoms_per_mol(:), num_acc_sites_per_mol(:), component_label(:)
 
     real, allocatable :: criteria(:,:)
 
     character(len=40) :: mapfile, fname, iname
 
-    implicit none
+
 
     open(10, file='hbonding.in', status='old')
     read(10,*)
