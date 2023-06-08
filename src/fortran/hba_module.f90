@@ -108,6 +108,7 @@ contains
         donors: do i=1, num_donors
             oindex = (i-1)*3 + 1
             acceptors: do j=1, num_acceptors
+                if ( atom_map(j,2) == 2) cycle
                 roxsq = distance2(r_don(oindex,:), r_acc(i,:), box)
                 if ( roxsq < criteria(1) ) then
                     ! Loop over hydrogens
