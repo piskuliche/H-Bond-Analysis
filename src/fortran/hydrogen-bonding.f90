@@ -22,8 +22,9 @@ program h_bonding
     character(len=40) :: mapfile, fname, iname
 
     ! Main Program
-    integer :: number_of_frames, number_of_atoms, ntmp
+    integer :: number_of_frames, number_of_atoms, ntmp, num_frames
     integer :: nchunks, num_donors, max_acceptors
+    integer :: check_if_water
     
     integer, allocatable :: atom_map(:,:,:)
     real, dimension(3) :: coord = 0.0
@@ -44,9 +45,9 @@ program h_bonding
     open(30, file='all_hydrogen_bonds.dat')
     
     max_acceptors = maxval(num_acceptors)
-    num_donors = sum(num_mol(is_water))
+    num_donors = num_mol(is_water)
     ! Allocate Arrays
-    allocate(r(max_chunk_size, num_components, max_acceptors, 3))
+    allocate(r(chunk_size, num_components, max_acceptors, 3))
     allocate(atom_map(num_components, max_acceptors, 2))
     allocate(hydrogen_bonds(max_chunk_size, num_donors, 2))
 
@@ -106,9 +107,9 @@ program h_bonding
         read_frames_loop: do fr_idx=chunk_start, chunk_stop
             ! Read frames
             ntmp = trj%read_next(1)
-            box(fr_idx) = trj%box(1)
+            box(fr_idx,:,:) = trj%box(1)
             comps_loop: do comp_idx=1, num_components
-                accs_loop: do acc_dix=1, num_acceptors(comp_dix)
+                accs_loop: do acc_idx=1, num_acceptors(comp_idx)
                     if (atom_map(comp_idx, acc_idx, 1) == 0) then
                         write(*,*) "Error: atom_map is not properly initialized"
                         write(*,*) comp_idx, acc_idx, atom_map(comp_idx, acc_idx, 1)
@@ -127,14 +128,14 @@ program h_bonding
             if ( do_water == 1 ) then
                 ! Do water analysis - note this is separated because it is expensive!
                 call find_h_bonds(r(fr_idx, is_water, :, :), r(fr_idx, is_water, :,:), num_mol(is_water), num_mol(is_water) &
-                                , criteria(is_water) &
+                                , criteria(is_water,:) &
                                 , atom_map(is_water, :, :), hydrogen_bonds(fr_idx, :, :))
             else
                 ! Do non-water analysis
                 comp_loop: do comp_idx=1, num_components
                     if ( comp_idx /= is_water) then
                         call find_h_bonds(r(fr_idx,is_water,:,:), r(fr_idx, comp_idx, :, :), num_mol(is_water) &
-                                        , num_acceptors(comp_idx), criteria(comp_idx) &
+                                        , num_acceptors(comp_idx), criteria(comp_idx,:) &
                                         , atom_map(comp_idx, :,:), hydrogen_bonds(fr_idx, :, :))
                     endif 
                 end do comp_loop
@@ -146,7 +147,7 @@ program h_bonding
         write_frames_loop: do fr_idx=chunk_start, chunk_stop
             ! DO SOMETHING
             wat: do i=1, num_mol(is_water)
-                write(30,*) i, hydrogen_bonds(fr_idx, is_water, i, 1), hydrogen_bonds(fr_idx, is_water, i, 2)
+                write(30,*) i, hydrogen_bonds(fr_idx, i, 1), hydrogen_bonds(fr_idx, i, 2)
             end do wat
         end do write_frames_loop
 
