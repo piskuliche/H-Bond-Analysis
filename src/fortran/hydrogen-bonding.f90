@@ -49,7 +49,7 @@ program h_bonding
     ! Allocate Arrays
     allocate(r(chunk_size, num_components, max_acceptors, 3))
     allocate(atom_map(num_components, max_acceptors, 2))
-    allocate(hydrogen_bonds(max_chunk_size, num_donors, 2))
+    allocate(hydrogen_bonds(chunk_size, num_donors, 2))
 
     ! Zero Arrays
 
