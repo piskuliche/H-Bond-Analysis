@@ -6,6 +6,7 @@ program h_bonding
 
     implicit none
 
+    type (Trajectory) :: trj
 
     ! Loop indexes
     integer :: i, j, k
@@ -46,7 +47,7 @@ program h_bonding
     num_donors = sum(num_mol(is_water))
     ! Allocate Arrays
     allocate(r(max_chunk_size, num_components, max_acceptors, 3))
-    allocate(atom_map(num_components, max_acceptors(, 2))
+    allocate(atom_map(num_components, max_acceptors, 2))
     allocate(hydrogen_bonds(max_chunk_size, num_donors, 2))
 
     ! Zero Arrays
