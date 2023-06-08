@@ -76,7 +76,7 @@ program h_bonding
 
     ! Setup Chunking
     num_frames = frame_stop - frame_start
-    nchunks = int(ceiling(rea(num_frames) / real(chunk_size)))
+    nchunks = int(ceiling(real(num_frames) / real(chunk_size)))
 
     ! Chunking loop
     chunks: do chunk_idx=1, nchunks
@@ -129,14 +129,14 @@ program h_bonding
             if ( do_water == 1 ) then
                 ! Do water analysis - note this is separated because it is expensive!
                 call find_h_bonds(r(fr_idx, is_water, :, :), r(fr_idx, is_water, :,:), num_mol(is_water), num_mol(is_water) &
-                                , criteria(is_water,:) &
+                                , criteria(is_water,:), box(fr_idx, :, :) &
                                 , atom_map(is_water, :, :), hydrogen_bonds(fr_idx, :, :))
             else
                 ! Do non-water analysis
                 comp_loop: do comp_idx=1, num_components
                     if ( comp_idx /= is_water) then
                         call find_h_bonds(r(fr_idx,is_water,:,:), r(fr_idx, comp_idx, :, :), num_mol(is_water) &
-                                        , num_acceptors(comp_idx), criteria(comp_idx,:) &
+                                        , num_acceptors(comp_idx), criteria(comp_idx,:), box(fr_idx,:,:) &
                                         , atom_map(comp_idx, :,:), hydrogen_bonds(fr_idx, :, :))
                     endif 
                 end do comp_loop
