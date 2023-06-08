@@ -57,7 +57,7 @@ program h_bonding
 
     ! Open Trajectory
     call trj%open(trim(fname), trim(iname))
-    number_of_frames = trj%num_of_frames
+    number_of_frames = trj%nframes
     number_of_atoms = trj%natoms()
     ! Print frame information for early frames
     write(20,*) "There are ", number_of_frames, " frames in the trajectory"
@@ -103,7 +103,7 @@ program h_bonding
         endif
 
         ! ****************** READ TRAJECTORY ******************
-        frames_loop: do fr_idx=chunk_start, chunk_stop
+        read_frames_loop: do fr_idx=chunk_start, chunk_stop
             ! Read frames
             ntmp = trj%read_next(1)
             box(fr_idx) = trj%box(1)
@@ -118,7 +118,7 @@ program h_bonding
                     r(fr_idx,comp_idx, acc_idx, :) = coord(:)
                 end do accs_loop
             end do comps_loop
-        end do frames_loop
+        end do read_frames_loop
 
         ! ****************** CALCULATION OF HBONDS ******************
 
@@ -126,7 +126,7 @@ program h_bonding
         frames_loop: do fr_idx=chunk_start, chunk_stop
             if ( do_water == 1 ) then
                 ! Do water analysis - note this is separated because it is expensive!
-                call find_h_bonds(r(fr_idx, is_water, :, :), r(fr_idx, is_water, :,:), num_mol(is_water), num_mol(is_water), criteria &
+                call find_h_bonds(r(fr_idx, is_water, :, :), r(fr_idx, is_water, :,:), num_mol(is_water), num_mol(is_water), criteria(is_water) &
                                 , atom_map(is_water, :, :), hydrogen_bonds(fr_idx, :, :))
             else
                 ! Do non-water analysis
@@ -141,12 +141,12 @@ program h_bonding
         !$OMP END PARALLEL DO
 
         ! ****************** OUTPUT DATA ******************
-        frames_loop: do fr_idx=chunk_start, chunk_stop
+        write_frames_loop: do fr_idx=chunk_start, chunk_stop
             ! DO SOMETHING
             wat: do i=1, num_mol(is_water)
                 write(30,*) i, hydrogen_bonds(fr_idx, is_water, i, 1), hydrogen_bonds(fr_idx, is_water, i, 2)
             end do wat
-        end do frames_loop
+        end do write_frames_loop
 
     end do chunks
     close(20)
