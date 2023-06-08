@@ -24,7 +24,7 @@ program h_bonding
     ! Main Program
     integer :: number_of_frames, number_of_atoms, ntmp, num_frames
     integer :: nchunks, num_donors, max_acceptors
-    integer :: check_if_water
+
     
     integer, allocatable :: atom_map(:,:,:)
     real, dimension(3) :: coord = 0.0
@@ -167,6 +167,7 @@ subroutine read_hb_input(mapfile, frame_start, frame_stop, fname, iname &
     integer, intent(out) :: frame_start, frame_stop, num_components, atom_count, is_water, do_water
     integer, allocatable, intent(out) :: num_mol(:), num_acceptors(:), component_start(:), atoms_per_component(:)
     integer, allocatable :: atoms_per_mol(:), num_acc_sites_per_mol(:), component_label(:)
+    integer :: check_if_water
 
     real, allocatable :: criteria(:,:)
 
@@ -252,7 +253,7 @@ subroutine find_h_bonds(r_don, r_acc, criteria, num_donors, num_acceptors, box, 
     integer :: num_donors, num_acceptors
 
     real, intent(in) :: r_don(:,:), r_acc(:,:)
-    real, intent(in) :: criteria(:,:), box(:,:)
+    real, intent(in) :: criteria(:), box(:,:)
     real :: roxsq, rhxsq, angle
     real, dimension(num_donors, 2), intent(out) :: hydrogen_bonds
     real, intent(in) :: atom_map(:,:)
