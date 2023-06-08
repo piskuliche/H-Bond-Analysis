@@ -126,13 +126,15 @@ program h_bonding
         frames_loop: do fr_idx=chunk_start, chunk_stop
             if ( do_water == 1 ) then
                 ! Do water analysis - note this is separated because it is expensive!
-                call find_h_bonds(r(fr_idx, is_water, :, :), r(fr_idx, is_water, :,:), num_mol(is_water), num_mol(is_water), criteria(is_water) &
+                call find_h_bonds(r(fr_idx, is_water, :, :), r(fr_idx, is_water, :,:), num_mol(is_water), num_mol(is_water) &
+                                , criteria(is_water) &
                                 , atom_map(is_water, :, :), hydrogen_bonds(fr_idx, :, :))
             else
                 ! Do non-water analysis
                 comp_loop: do comp_idx=1, num_components
                     if ( comp_idx /= is_water) then
-                        call find_h_bonds(r(fr_idx,is_water,:,:), r(fr_idx, comp_idx, :, :), num_mol(is_water), num_acceptors(comp_idx), criteria(comp_idx) &
+                        call find_h_bonds(r(fr_idx,is_water,:,:), r(fr_idx, comp_idx, :, :), num_mol(is_water) &
+                                        , num_acceptors(comp_idx), criteria(comp_idx) &
                                         , atom_map(comp_idx, :,:), hydrogen_bonds(fr_idx, :, :))
                     endif 
                 end do comp_loop
