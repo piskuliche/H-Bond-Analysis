@@ -14,16 +14,17 @@ program h_bonding
 
     ! Input Args
     integer, parameter :: chunk_size=100
-    integer :: frame_start, frame_stop, 
+    integer :: frame_start, frame_stop
     integer :: num_components, atom_count, is_water, do_water
-    integer, allocatable :: num_components(:), num_acceptors(:), component_start(:), atoms_per_component(:), num_mol(:)
+    integer, allocatable :: num_acceptors(:), component_start(:), atoms_per_component(:), num_mol(:)
     real, allocatable :: criteria(:,:)
     character(len=40) :: mapfile, fname, iname
 
     ! Main Program
     integer :: number_of_frames, number_of_atoms, ntmp
-    integer :: nchunks
+    integer :: nchunks, num_donors, max_acceptors
     
+    integer, allocatable :: atom_map(:,:,:)
     real, dimension(3) :: coord = 0.0
     real, dimension(chunk_size, 3, 3) :: box
     real, allocatable :: hydrogen_bonds(:,:,:), r(:,:,:,:)
@@ -34,17 +35,19 @@ program h_bonding
     ! ****************************************************************************************************
     ! ****************************************************************************************************
     ! Read input file
-    call read_hb_input(mapfile, frame_start, frame_stop, fname, iname, &
+    call read_hb_input(mapfile, frame_start, frame_stop, fname, iname &
                     , num_components, num_mol, num_acceptors, component_start &
                     , atoms_per_component, is_water, do_water, criteria)
 
     ! Open Output Files
     open(30, file='all_hydrogen_bonds.dat')
-
+    
+    max_acceptors = maxval(num_acceptors)
+    num_donors = sum(num_mol(is_water))
     ! Allocate Arrays
-    allocate(r(max_chunk_size, num_components, num_acceptors, 3))
-    allocate(atom_map(num_components, num_acceptors, 2))
-    allocate(hydrogen_bonds(max_chunk_size, num_acceptors(is_water), 2))
+    allocate(r(max_chunk_size, num_components, max_acceptors, 3))
+    allocate(atom_map(num_components, max_acceptors(, 2))
+    allocate(hydrogen_bonds(max_chunk_size, num_donors, 2))
 
     ! Zero Arrays
 
