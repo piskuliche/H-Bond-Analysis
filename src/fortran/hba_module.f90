@@ -102,7 +102,7 @@ contains
         real, intent(in) :: criteria(:), box(:,:)
         real :: roxsq, rhxsq, angle
         real, dimension(num_donors, 2), intent(out) :: hydrogen_bonds
-        real, intent(in) :: atom_map(:,:)
+        integer, intent(in) :: atom_map(:,:)
 
         ! Loop over oxygens
         donors: do i=1, num_donors
