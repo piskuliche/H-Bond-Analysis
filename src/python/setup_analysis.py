@@ -32,7 +32,7 @@ def Pull_Hydration_Data(file_start=1, file_stop=100, fail_okay=False, outname="h
         
     """
     data = []
-    for hyd_dir in range(file_start, file_stop):
+    for hyd_dir in range(file_start, file_stop+1):
         try:
             data = Read_Hyd_File(data, "%d/hydration_shell.log"%hyd_dir)
         except:
@@ -47,7 +47,7 @@ def Pull_Hydration_Data(file_start=1, file_stop=100, fail_okay=False, outname="h
 
 def Pull_Hbond_Data(file_start=1, file_stop=100, fail_okay=False, outname="hbond_data"):
     data = None
-    for hb_dir in range(file_start, file_stop):
+    for hb_dir in range(file_start, file_stop+1):
         print(hb_dir)
         data = Read_Hbond_File(data, "%d/all_hydrogen_bonds.dat"% hb_dir)
         """
@@ -77,4 +77,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     Pull_Hydration_Data(file_start=args.fstart, file_stop=args.fstop, fail_okay=True, outname=args.hydout)
-    Pull_Hbond_Data(file_start=args.fstart, file_stop=args.fstop, fail_okay=True, outname=args.hbout)
+    #Pull_Hbond_Data(file_start=args.fstart, file_stop=args.fstop, fail_okay=True, outname=args.hbout)
