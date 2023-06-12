@@ -3,7 +3,7 @@ module hydr_module
   public
 contains
 
-  subroutine Find_Hydr(r1, r2, num_r2, comp_num, L, atom_map, criteria, hydration)
+  subroutine Find_Hydr(r1, r2, num_r2, nmol, comp_num, L, atom_map, criteria, hydration, atomic_hydration, molar_hydration)
     ! Finds the closest water to atoms in the given group
     
     ! Args:
@@ -27,20 +27,29 @@ contains
 
     use myfuncs
     implicit none
-    integer, intent(in) :: num_r2, comp_num
+    integer, intent(in) :: num_r2, comp_num, nmol
     real, dimension(:), intent(in) :: r1
     real, dimension(:,:), intent(in) :: r2, L
     integer, dimension(:,:), intent(in) :: atom_map
     real, dimension(:,:), intent(in) :: criteria
     real, dimension(:), intent(inout) :: hydration
+    integer, dimension(:), intent(inout) :: atomic_hydration, molar_hydration
  
     integer :: i
+    integer :: found, accept_per_mol
     real :: roxsq 
     ! Loop over all the atoms in the second group
+    accept_per_mol = num_r2/nmol
+    found = 0
     do i = 1, num_r2
       ! Calculate the squared distance between the two atoms (with PBC)
       roxsq = distance2(r1, r2(i,:), L)
       if (roxsq <= criteria(comp_num, atom_map(i,2))) then
+        atomic_hydration(i) = atomic_hydration(i) + 1
+        if ( found == 0 ) then
+          molar_hydration(i) = molar_hydration(i) + 1
+          found = 1
+        endif
         if (hydration(2) > 0.0) then
           if (roxsq < hydration(2)) then
             hydration(1) = i
@@ -51,6 +60,9 @@ contains
           hydration(2) = roxsq
         endif 
       endif
+      if ( mod(i,accept_per_mol) == 0 ) then
+        found = 0
+      endif
     end do
 
   end subroutine Find_Hydr
@@ -58,7 +70,7 @@ contains
 
   subroutine Alt_Hyd_Input(mapfile, frame_start, frame_stop, fname, iname &
                             , num_components, num_heavy, component_start &
-                            , atoms_per_component &
+                            , atoms_per_component, num_mol &
                             , is_water, criteria)
     implicit none
 

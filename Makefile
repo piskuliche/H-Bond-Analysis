@@ -29,6 +29,7 @@ py: setup
 	ln -s $(HOMEPATH)/src/python/generate_atom_map.py bin/
 	ln -s $(HOMEPATH)/src/python/setup_analysis.py bin/
 	ln -s $(HOMEPATH)/src/python/hbond_to_molecule.py bin/
+	ln -s $(HOMEPATH)/src/python/hydration_class.py bin/
 	chmod 777 bin/*
 	
 
