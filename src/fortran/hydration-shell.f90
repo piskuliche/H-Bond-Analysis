@@ -166,6 +166,8 @@ program hyd_shell
     apermol = 0
     molar = 0
     do mem_comp_idx=1, num_components
+      hyd_by_mol = 0
+      hyd_by_atom = 0
       hyd_by_atom = sum(atomic_hydration(mem_comp_idx,:,:),dim=1)
       molar = sum(molar_hydration(mem_comp_idx,:,:), dim=1)
       apermol = num_heavy(mem_comp_idx)/num_mol(mem_comp_idx)
@@ -174,11 +176,7 @@ program hyd_shell
           hyd_by_mol(j) = hyd_by_mol(j) + molar((j-1)*apermol+k)
         enddo 
       enddo
-    enddo
-
-
-    ! Write the hydration files
-    do mem_comp_idx=1, num_components
+    
       write(*,*) sum(occupancy(mem_comp_idx,:))
       do wat_idx=1, num_heavy(is_water)
         write(100+mem_comp_idx,*) i, closest_hydr(mem_comp_idx,wat_idx,1), closest_hydr(mem_comp_idx,wat_idx,2)
@@ -192,7 +190,6 @@ program hyd_shell
         do j=1, num_mol(mem_comp_idx)
           write(300+mem_comp_idx,*) j, hyd_by_mol(j)
         enddo
-        
       endif
     enddo 
     !$OMP END SINGLE
