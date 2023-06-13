@@ -124,7 +124,7 @@ program hyd_shell
     closest_hydr=0
     atomic_hydration = 0
     molar_hydration = 0
-    !$OMP DO reduction(+:occupancy) private(mem_comp_idx, wat_idx, occ_atom_type)
+    !$OMP DO reduction(+:occupancy) private(mem_comp_idx, wat_idx, occ_atom_type, occ_atom)
     waters: do wat_idx=1, num_heavy(is_water)
       ! Loop over lipid and lipid-like atoms to find closest membrane heavy atom
       mem_comps: do mem_comp_idx=1, num_components
