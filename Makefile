@@ -10,7 +10,7 @@ all: setup hba hyd py
 setup: 
 	mkdir -p bin/
 	touch bin/test
-	rm bin/*
+	rm bin/*.py
 	test -f module/path.include || echo "module use $(HOMEPATH)/module" >> ~/.bash_profile
 	test -f module/path.include || source ~/.bash_profile
 	@echo "prepend_path('PATH', '$(HOMEPATH)/bin')" > module/path.include
@@ -30,6 +30,7 @@ py: setup
 	ln -s $(HOMEPATH)/src/python/setup_analysis.py bin/
 	ln -s $(HOMEPATH)/src/python/hbond_to_molecule.py bin/
 	ln -s $(HOMEPATH)/src/python/hydration_class.py bin/
+	ln -s $(HOMEPATH)/src/python/lipid_analyze.py bin/
 	chmod 777 bin/*
-	
+
 

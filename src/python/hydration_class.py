@@ -19,7 +19,7 @@ class Hydration_Data:
         return
     
     def add_hydration_data(self):
-        #self.add_leaf_data("leaflet_wt10.pckl")
+        self.add_leaf_data("leaflet_wt10.pckl")
         for ifile in range(self.fstart, self.fstop+1):
             print(ifile)
             start_idx = (ifile-1)*self.fr_per_file
@@ -36,7 +36,6 @@ class Hydration_Data:
         for i in [2,6]:
             self.occ_cmap[i] = {0:np.zeros(natoms[i]), 1:np.zeros(natoms[i]), 2:np.zeros(natoms[i]), 3:np.zeros(natoms[i])}
             all_counts[i] = {0:0,1:0,2:0,3:0}
-
         for frame in self.hyd_by_atom[2]:
             molvals = []
             comps = []
@@ -46,8 +45,8 @@ class Hydration_Data:
             for i in range(len(molvals)):
                 for atom in range(natoms[comps[i]]):
                     hcount = self.hyd_by_atom[comps[i]][frame][atom]
-                    self.occ_cmap[comps[i]][self.occupancy[frame][molvals[i]]][atom] += hcount
-                #all_counts[comps[i]][self.occupancy[frame][molvals[i]]] += 1
+                    self.occ_cmap[comps[i]][self.occupancy[frame][i]][atom] += hcount
+                all_counts[comps[i]][self.occupancy[frame][i]] += 1
         """
         for icomp in [2,6]:
             for occ in self.occ_cmap[icomp]:
@@ -63,8 +62,9 @@ class Hydration_Data:
                     norm.append(self.occ_cmap[icomp][i]/np.max(self.occ_cmap[icomp][i]))
                 else:
                     norm.append(np.zeros_like(self.occ_cmap[icomp][i]))
-                
+            ac = [all_counts[icomp][0], all_counts[icomp][1], all_counts[icomp][2], all_counts[icomp][3]]
             np.savetxt("comp_%d_map.dat"%icomp,np.c_[norm[0], norm[1], norm[2], norm[3]])
+            np.savetxt("occ_%d_values.dat"%icomp, np.c_[self.occ_cmap[icomp][0]/ac[0],self.occ_cmap[icomp][1]/ac[1],self.occ_cmap[icomp][2]/ac[2],self.occ_cmap[icomp][3]/ac[3]])
 
     def add_leaf_data(self,filename):
         import pickle
@@ -104,8 +104,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     hyd_data = Hydration_Data(args.fstart, args.fstop)
     hyd_data.add_hydration_data()
-    hyd_data.save_data(args.tag)
-    #hyd_data.translate_to_mol()
+    #hyd_data.save_data(args.tag)
+    hyd_data.translate_to_mol()
 
 
 
