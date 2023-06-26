@@ -3,3 +3,6 @@ bin/
 module/path.include
 module/hba.lua
 tests/*
+
+*.pckl
+python/*.ipynb

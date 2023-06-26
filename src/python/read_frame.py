@@ -46,7 +46,6 @@ class frame_data():
         return 
     
     def grab_data(self, dataname, molec=2, occupancy=False):
-        # NEED TO ADD SEPARATION BY MOLTYPE
         """ Returns the data from the frame.
 
         Args:
@@ -95,6 +94,17 @@ class frame_data():
             return avs
         else:
             return np.average(self.grab_data(dataname, molec=molec))
+        
+    def histogram_frame(self, dataname, molec=2, bins=50, range=(0,100), 
+                        bin_edges = None, occupancy=False):
+        """
+        """
+        data = self.grab_data(dataname, molec=molec, occupancy=occupancy)
+        if bin_edges is None:
+            hist, bin_edges = np.histogram(data, bins=bins, range=range)
+        else:
+            hist, _ = np.histogram(data, bins=bin_edges)
+        return hist, bin_edges
 
 
 """ 
@@ -293,8 +303,38 @@ class calculation_data:
             if average:
                 data = np.mean(data, axis=0)
             return np.array(data)
-        
 
+    def Histogram_Data(self, dataname, molec=2, bins=50, range=(0,100), occupancy=False):
+        """ Generates a histogram of the data for the entire simulation
+
+        Args:
+            dataname (str): The name of the data to be analyzed.
+            molec (int, optional): The molecule number to be analyzed. Defaults to 2.
+            bins (int, optional): The number of bins to be used in the histogram. Defaults to 50.
+            range (tuple, optional): The range of the histogram. Defaults to (0,100).
+            occupancy (bool, optional): Whether or not the data is occupancy data. Defaults to False.
+
+        Returns:
+            np.array: The histogram data.
+            np.array: The bin edges.
+            
+        """
+        hist, bin_edges = [], []
+        ct = 0
+        for frame in self.frames:
+            ht, bt = None, None
+            if ct == 0:
+                ht, bt  = frame.histogram_frame(dataname, molec=2, bins=50, range=(0,100), 
+                        bin_edges = None, occupancy=False)
+                bin_edges = bt
+            else:
+                ht, bt = frame.histogram_frame(dataname, molec=2, bins=50, range=(0,100), 
+                        bin_edges = bin_edges, occupancy=False)
+            hist.append(ht)
+            
+            ct = ct + 1
+        final_hist = np.sum(np.array(hist), axis=0)
+        return final_hist, bin_edges
 
 if __name__ == "__main__":
     data = calculation_data(dirframes=501, dirstart=1, dirstop=100, ncomps=[180,20], compno=[2,6])
