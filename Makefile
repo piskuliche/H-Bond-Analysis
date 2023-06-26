@@ -31,6 +31,7 @@ py: setup
 	ln -s $(HOMEPATH)/src/python/hbond_to_molecule.py bin/
 	ln -s $(HOMEPATH)/src/python/hydration_class.py bin/
 	ln -s $(HOMEPATH)/src/python/lipid_analyze.py bin/
+	ln -s $(HOMEPATH)/src/python/read_frame.py bin/
 	chmod 777 bin/*
 
 

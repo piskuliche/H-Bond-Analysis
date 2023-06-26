@@ -4,40 +4,134 @@ import numpy as np
 import MDAnalysis as mda
 from MDAnalysis import transformations
 import matplotlib.pyplot as plt
+import math
 
 
-def Calculate_Z_Distance(membrane):
-    zcom = membrane.center_of_mass(wrap=True)[2]
-    zdists = np.abs(membrane.center_of_mass(wrap=True, compound='residues')[:,2] - zcom)
-    return zdists
+"""
+**** 
+Basic Math Functions
+****
+"""
+def P2(x):
+    return (3*np.cos(x)**2. - 1)/2.0
 
-def Calculate_Rg(u, AtomGroup):
-    residues = np.unique(AtomGroup.resids)
-    rg_vals = []
-    for residue in residues:
-        molgroup = u.select_atoms("resid %d" % residue)
-        rg_vals.append(molgroup.radius_of_gyration())
-    print(np.average(rg_vals), np.min(rg_vals), np.max(rg_vals))
-    return rg_vals
+def bond_unit_vec(r1, r2, L):
+    dr = r2 - r1
+    dr = dr - L*np.rint(dr/L)
+    return dr/np.sum(dr**2.)
+
+"""
+**** 
+Data Storage Class
+****
+"""
+
+class MolData:
+    def __init__(self, molecs, data, reference):
+        self.molids = reference
+        self.data = np.zeros_like(reference)
+        self.add_by_reference(molecs, data, reference)
+        return
+    def add_by_reference(self, molecs, data, reference):
+        mask = np.isin(reference, molecs)
+        self.data[mask] = data[np.where(molecs == reference[mask])]
+        return
+        
+
+            
     
+"""
+**** 
+Analysis Functions
+****
+"""
 
-def Main_Analysis(grofile, trajfile):
+def Analyze_by_Residue(u, ts, AtomGroup, function, optional=None):
+    residues = np.unique(AtomGroup.resids)
+    data = np.zeros(len(residues))
+    molids = np.zeros(len(residues))
+    for i, residue in enumerate(residues):
+        ResGroups = AtomGroup.split("residue")
+        data[i] = function(u, ts, AtomGroup, ResGroups[i], optional=optional)
+        molids[i] = ResGroups[i].resids[0]
+    return molids, data
 
-    u = mda.Universe(grofile, trajfile)
+def Calc_Z_byres(u, ts, AtomGroup, ResAtoms, optional = None):
+    if optional != None:
+        raise ValueError("Optional must be None for Calc_Z_byres")
+    zcom = AtomGroup.center_of_mass()[2]
+    zdist = np.abs(ResAtoms.center_of_mass(wrap=True)[2] - zcom)
+    return zdist
+
+def Calc_Rg_byres(u, ts, AtomGroup, ResAtoms, optional = None):
+    if optional != None:
+        raise ValueError("Optional must be None for Calc_Rg_byres")
+    return ResAtoms.radius_of_gyration()
+
+def Calc_P2_byres(u, ts, AtomGroup, ResAtoms, optional = [0,0,1]):
+    if len(ResAtoms) != 2:
+        print("ResAtoms must be only two atoms")
+
+    L = ts.dimensions[:3]
+    pos1 = ResAtoms.positions[0]
+    pos2 = ResAtoms.positions[1]
+    bond_vec = bond_unit_vec(pos1, pos2, L)
+    angle = np.arccos(np.dot(bond_vec, optional))
+    p2_value = P2(angle)
+    return p2_value
+
+def Main_Analysis(output_data, tprfile, trajfile):
+    u = mda.Universe(tprfile, trajfile)
     workflow = [transformations.unwrap(u.atoms)]
     u.trajectory.add_transformations(*workflow)
     membrane = u.select_atoms("resname POPC or resname LAUR")
-    popc_molecs = u.select_atoms("resname POPC")
-    laur_molecs = u.select_atoms("resname LAUR")
-    output_data = {"zdists":[], "rg":[]}
+    laur_CN = u.select_atoms("resname LAUR and (type CG2O5 or type NG301)")
+    
     for ts in u.trajectory:
-        output_data["zdists"].append(Calculate_Z_Distance(membrane))
-        output_data["rg"].append(Calculate_Rg(u, popc_molecs))
-        
-    return
+        print(ts.time)
+        L = ts.dimensions
+        zmol, zdat = Analyze_by_Residue(u, ts, membrane, Calc_Z_byres)
+        output_data["zdists"].append(MolData(zmol, zdat, zmol))
+        rmol, rdat = Analyze_by_Residue(u, ts, membrane, Calc_Rg_byres)
+        output_data["rg"].append(MolData(rmol, rdat, zmol))
+        pmol, pdat = Analyze_by_Residue(u, ts, laur_CN, Calc_P2_byres, optional=[0,0,1])
+        output_data["laurp2"].append(MolData(pmol,pdat, zmol))
 
+    return output_data
+
+def Do_Files(start=1,stop=100):
+    output_data = {"zdists":[], "rg":[], "laurp2":[]}
+    for i in range(start,stop):
+        tprfile = "../../tpr/step7_%d.tpr"%i
+        xtcfile = "../../xtc/step7_%d.xtc"%i
+        output_data = Main_Analysis(output_data, tprfile, xtcfile)
+
+def Do_File(filenumber=1):
+    tprfile = "../../tpr/step7_%d.tpr"%filenumber
+    xtcfile = "../../xtc/step7_%d.xtc"%filenumber
+    output_data = {"zdists":[], "rg":[], "laurp2":[]}
+    output_data = Main_Analysis(output_data, tprfile, xtcfile)
+    Return_Data(output_data, filenumber)
+
+def Return_Data(output_data, number):
+    import pickle
+    cnt = 0
+    for key in output_data:
+        outname = "output_%s_%s.pckl"%(key, number)
+        dim2_data, molids = [], []
+        for i, frame in enumerate(output_data[key]):
+            if i == 0:
+                molids = frame.molids
+            dim2_data.append(frame.data)
+        pickle.dump(dim2_data, open(outname, 'wb'))
+        if cnt == 0: pickle.dump(molids, open("molids_%s_%s.pckl"%(key, number), 'wb'))
+        cnt = 1
+    return
 
 if __name__ == "__main__":
     import argparse
+    import sys
 
-    Main_Analysis("../tpr/step7_50.tpr", "../xtc/step7_50.xtc")
+    filenumber = int(sys.argv[1])
+
+    Do_File(filenumber)
