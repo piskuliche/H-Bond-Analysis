@@ -80,6 +80,17 @@ def Calc_P2_byres(u, ts, AtomGroup, ResAtoms, optional = [0,0,1]):
     p2_value = P2(angle)
     return p2_value
 
+def Calc_Angle_byres(u, ts, AtomGroup, ResAtoms, optional = [0,0,1]):
+    if len(ResAtoms) != 2:
+        print("ResAtoms must be only two atoms")
+
+    L = ts.dimensions[:3]
+    pos1 = ResAtoms.positions[0]
+    pos2 = ResAtoms.positions[1]
+    bond_vec = bond_unit_vec(pos1, pos2, L)
+    angle = np.arccos(np.dot(bond_vec, optional))
+    return angle
+
 def Main_Analysis(output_data, tprfile, trajfile):
     u = mda.Universe(tprfile, trajfile)
     workflow = [transformations.unwrap(u.atoms)]
@@ -94,13 +105,13 @@ def Main_Analysis(output_data, tprfile, trajfile):
         output_data["zdists"].append(MolData(zmol, zdat, zmol))
         rmol, rdat = Analyze_by_Residue(u, ts, membrane, Calc_Rg_byres)
         output_data["rg"].append(MolData(rmol, rdat, zmol))
-        pmol, pdat = Analyze_by_Residue(u, ts, laur_CN, Calc_P2_byres, optional=[0,0,1])
-        output_data["laurp2"].append(MolData(pmol,pdat, zmol))
+        pmol, pdat = Analyze_by_Residue(u, ts, laur_CN, Calc_Angle_byres, optional=[0,0,1])
+        output_data["tiltangle"].append(MolData(pmol,pdat, zmol))
 
     return output_data
 
 def Do_Files(start=1,stop=100):
-    output_data = {"zdists":[], "rg":[], "laurp2":[]}
+    output_data = {"zdists":[], "rg":[], "tiltangle":[]}
     for i in range(start,stop):
         tprfile = "../../tpr/step7_%d.tpr"%i
         xtcfile = "../../xtc/step7_%d.xtc"%i
@@ -109,7 +120,7 @@ def Do_Files(start=1,stop=100):
 def Do_File(filenumber=1):
     tprfile = "../../tpr/step7_%d.tpr"%filenumber
     xtcfile = "../../xtc/step7_%d.xtc"%filenumber
-    output_data = {"zdists":[], "rg":[], "laurp2":[]}
+    output_data = {"zdists":[], "rg":[], "tiltangle":[]}
     output_data = Main_Analysis(output_data, tprfile, xtcfile)
     Return_Data(output_data, filenumber)
 

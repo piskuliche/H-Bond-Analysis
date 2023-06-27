@@ -188,10 +188,12 @@ class calculation_data:
         zdists = pickle.load(open("%d/output_zdists_%d.pckl" % (ndir,ndir), 'rb'))
         rg = pickle.load(open("%d/output_rg_%d.pckl" % (ndir,ndir), 'rb'))
         p2 = pickle.load(open("%d/output_laurp2_%d.pckl" % (ndir,ndir), 'rb'))
+        angle = pickle.load(open("%d/output_tiltangle_%d.pckl" % (ndir,ndir), 'rb'))
         for frame in range(self.dirframes):
             self.frames[frame+(ndir-1)*self.dirframes].add_data("zdists", zdists[frame])
             self.frames[frame+(ndir-1)*self.dirframes].add_data("rg", rg[frame])
             self.frames[frame+(ndir-1)*self.dirframes].add_data("laurtilt", p2[frame])
+            self.frames[frame+(ndir-1)*self.dirframes].add_data("tiltangle", angle[frame])
         return
 
     def pull_dir_hyd(self, ndir):
@@ -328,7 +330,7 @@ class calculation_data:
                 data = np.mean(data, axis=0)
             return np.array(data)
 
-    def Histogram_Data(self, dataname, molec=2, bins=50, range=(0,100), occupancy=False):
+    def Histogram_Data(self, dataname, molec=2, bins=50, range=(0,100), occupancy=False, frame_start=None, frame_stop=None):
         """ Generates a histogram of the data for the entire simulation
 
         Args:
@@ -345,7 +347,7 @@ class calculation_data:
         """
         hist, bin_edges = [], []
         ct = 0
-        for frame in self.frames:
+        for frame in self.frames[frame_start:frame_stop]:
             ht, bt = None, None
             if ct == 0:
                 ht, bt  = frame.histogram_frame(dataname, molec=molec, bins=bins, range=range, 
