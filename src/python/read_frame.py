@@ -24,6 +24,7 @@ class frame_data():
         self.data['occupancy'] = np.zeros(nmols)
         self.data['leaflet'] = np.zeros(nmols)
         self.data['molids'] = np.zeros(nmols)
+        self.notes = []
 
         self.compno = compno
         self.ncomps = ncomps
@@ -45,30 +46,28 @@ class frame_data():
             self.data[dataname][i] = d
         return 
     
-    def grab_data(self, dataname, molec=2, occupancy=False):
+    def grab_data(self, dataname, occupancy=False):
         """ Returns the data from the frame.
 
         Args:
             dataname (str): The name of the data to be returned.
-            molec (int, optional): The molecule type to be returned. Defaults to 2.
             occupancy (bool, optional): Whether or not to return the data by occupancy. Defaults to False.
 
         Returns:
             array: The data from the frame - split by mol
 
         """
-        molmask = (np.array(self.components) == molec)
         if occupancy:
             if "occupancy" not in self.data:
                 raise ValueError("Occupancy data not present in frame.")
             # Masks the data by occupancy
-            occdata0 = self.data[dataname][(self.data['occupancy'] == 0) & molmask]
-            occdata1 = self.data[dataname][(self.data['occupancy'] == 1) & molmask]
-            occdata2 = self.data[dataname][(self.data['occupancy'] == 2) & molmask]
-            occdata3 = self.data[dataname][(self.data['occupancy'] == 3) & molmask]
+            occdata0 = self.data[dataname][(self.data['occupancy'] == 0)]
+            occdata1 = self.data[dataname][(self.data['occupancy'] == 1)]
+            occdata2 = self.data[dataname][(self.data['occupancy'] == 2)]
+            occdata3 = self.data[dataname][(self.data['occupancy'] == 3)]
             return occdata0, occdata1, occdata2, occdata3
         else:
-            return self.data[dataname][molmask]
+            return self.data[dataname]
         
     
     def query_average(self, dataname, molec=2, occupancy=False):
@@ -99,12 +98,25 @@ class frame_data():
                         bin_edges = None, occupancy=False):
         """
         """
-        data = self.grab_data(dataname, molec=molec, occupancy=occupancy)
+        data = self.grab_data(dataname, occupancy=occupancy)[molec]
         if bin_edges is None:
             hist, bin_edges = np.histogram(data, bins=bins, range=range)
         else:
             hist, _ = np.histogram(data, bins=bin_edges)
         return hist, bin_edges
+    
+    def add_note(self, note):
+        """ Adds a note to the frame.
+
+        Args:
+            note (str): The note to be added.
+
+        Returns:
+            None
+
+        """
+        self.notes.append(note)
+        return
 
 
 """ 
@@ -219,7 +231,19 @@ class calculation_data:
             ndir (int): The directory number to pull the data from.
 
         """
-        vor_data = pickle.load(open('../voronoi_plots/data/vor_%d.pckl' % ndir, 'rb'))
+        try:
+            vor_data = pickle.load(open('../voronoi_plots/data/vor_%d.pckl' % ndir, 'rb'))
+        except FileNotFoundError:
+            print("No voronoi data for directory %d" % ndir)
+            for frame in range(self.dirframes):
+                frame_index = frame + (ndir-1) * self.dirframes
+                mols = np.sum(self.ncomps)
+                self.frames[frame_index].add_data("occupancy", np.zeros(mols))
+                self.frames[frame_index].add_data("areas", np.zeros(mols))
+                self.frames[frame_index].add_data("leaflet", np.zeros(mols))
+                self.frames[frame_index].add_data("molids", np.zeros(mols))
+                self.frames[frame_index].add_note("voronoi: No voronoi data for directory %d" % ndir)
+            return
         for frame in range(self.dirframes):
             # Choose the correct frame
             frame_index = frame + (ndir-1) * self.dirframes
@@ -317,19 +341,19 @@ class calculation_data:
         Returns:
             np.array: The histogram data.
             np.array: The bin edges.
-            
+
         """
         hist, bin_edges = [], []
         ct = 0
         for frame in self.frames:
             ht, bt = None, None
             if ct == 0:
-                ht, bt  = frame.histogram_frame(dataname, molec=2, bins=50, range=(0,100), 
-                        bin_edges = None, occupancy=False)
+                ht, bt  = frame.histogram_frame(dataname, molec=molec, bins=bins, range=range, 
+                        bin_edges = None, occupancy=occupancy)
                 bin_edges = bt
             else:
-                ht, bt = frame.histogram_frame(dataname, molec=2, bins=50, range=(0,100), 
-                        bin_edges = bin_edges, occupancy=False)
+                ht, bt = frame.histogram_frame(dataname, molec=molec, bins=bins, range=range, 
+                        bin_edges = bin_edges, occupancy=occupancy)
             hist.append(ht)
             
             ct = ct + 1
