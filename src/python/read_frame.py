@@ -76,7 +76,7 @@ class frame_data():
         else:
             return self.data[dataname]
 
-    def query_average(self, dataname, molec=2, occupancy=False):
+    def query_average(self, dataname, occupancy=False):
         """ Returns the average of the data in the frame.
 
         Args:
@@ -88,7 +88,7 @@ class frame_data():
 
         """
         if occupancy:
-            data = self.grab_data(dataname, molec=molec, occupancy=True)
+            data = self.grab_data(dataname, occupancy=True)
             avs = []
             for i in range(4):
                 if len(data[i]) > 0:
@@ -98,13 +98,15 @@ class frame_data():
 
             return avs
         else:
-            return np.average(self.grab_data(dataname, molec=molec))
+            return np.average(self.grab_data(dataname))
 
-    def histogram_frame(self, dataname, molec=2, bins=50, range=(0, 100),
+    def histogram_frame(self, dataname, occ_choice=2, bins=50, range=(0, 100),
                         bin_edges=None, occupancy=False):
         """
         """
-        data = self.grab_data(dataname, occupancy=occupancy)[molec]
+        data = self.grab_data(dataname, occupancy=occupancy)
+        if occupancy: # Chooses the right occupancy value
+            data = data[occ_choice]
         if bin_edges is None:
             hist, bin_edges = np.histogram(data, bins=bins, range=range)
         else:
@@ -163,7 +165,7 @@ class calculation_data:
         Returns:
             None
         """
-        for i in range(self.dirstart, self.dirstop):
+        for i in range(self.dirstart, self.dirstop+1):
             self.new_dir()
             self.pull_dir_hyd(i)
             self.pull_voronoi_data(i)
@@ -361,7 +363,7 @@ class calculation_data:
                 data = np.mean(data, axis=0)
             return np.array(data)
 
-    def Histogram_Data(self, dataname, molec=2, bins=50, range=(0, 100), occupancy=False, frame_start=None, frame_stop=None):
+    def Histogram_Data(self, dataname, occ_choice=2, bins=50, range=(0, 100), occupancy=False, frame_start=None, frame_stop=None):
         """ Generates a histogram of the data for the entire simulation
 
         Args:
@@ -381,11 +383,11 @@ class calculation_data:
         for frame in self.frames[frame_start:frame_stop]:
             ht, bt = None, None
             if ct == 0:
-                ht, bt = frame.histogram_frame(dataname, molec=molec, bins=bins, range=range,
+                ht, bt = frame.histogram_frame(dataname, occ_choice=occ_choice, bins=bins, range=range,
                                                bin_edges=None, occupancy=occupancy)
                 bin_edges = bt
             else:
-                ht, bt = frame.histogram_frame(dataname, molec=molec, bins=bins, range=range,
+                ht, bt = frame.histogram_frame(dataname, occ_choice=occ_choice, bins=bins, range=range,
                                                bin_edges=bin_edges, occupancy=occupancy)
             hist.append(ht)
 
