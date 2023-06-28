@@ -364,6 +364,9 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             voronoi_data[frame_index][i]['areas'] = areas
             voronoi_data[frame_index][i]['occupancy'] = occupancy
             voronoi_data[frame_index][i]['atomindex'] = leaf.indices
+            voronoi_data[frame_index][i]['resnames'] = leaf.resnames
+            voronoi_data[frame_index][i]['molids'] = leaf.resids
+
 
             # Plot the diagram on the plot_everyth frame
             if frame_index % plot_every == 0:
@@ -435,4 +438,4 @@ def Setup_Safe_Directory(dirname):
 
 
 if __name__ == "__main__":
-    Do_Files(leafsel="(resname POPC and name P*)", fstop=100)
+    Do_Files(leafsel="(resname POPC and name P*)", fstart=1, fstop=100)
