@@ -100,9 +100,9 @@ def Analyze_Leaflets(mda_U, selection="(resname POPC and name P*)",
                 if iter > maxiter:
                     raise RuntimeError("Could not find leaflets")
                 L = LeafletFinder(mda_U, atom_selection, pbc=periodicity, cutoff = cutoff)
-                if len(L.groups() > 2):
+                if len(L.groups()) > 2:
                     cutoff += 0.1
-                elif len(L.groups() < 2):
+                elif len(L.groups()) < 2:
                     cutoff -= 0.1
                 else:
                     found = True
