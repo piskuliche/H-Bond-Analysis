@@ -363,7 +363,7 @@ class calculation_data:
                 data = np.mean(data, axis=0)
             return np.array(data)
 
-    def Histogram_Data(self, dataname, occ_choice=2, bins=50, range=(0, 100), occupancy=False, frame_start=None, frame_stop=None):
+    def Histogram_Data(self, dataname, occ_choice=2, bins=50, range=(0, 100), occupancy=False, frame_start=None, frame_stop=None, frame_list=None):
         """ Generates a histogram of the data for the entire simulation
 
         Args:
@@ -378,22 +378,47 @@ class calculation_data:
             np.array: The bin edges.
 
         """
+
+        frames_iterable=None
+        if frame_list is None:
+            frames_iterable = self.frames[frame_start:frame_stop]
+        else:
+            frames_iterable = frame_list
+
         hist, bin_edges = [], []
         ct = 0
-        for frame in self.frames[frame_start:frame_stop]:
+        for frame in frames_iterable:
             ht, bt = None, None
             if ct == 0:
                 ht, bt = frame.histogram_frame(dataname, occ_choice=occ_choice, bins=bins, range=range,
-                                               bin_edges=None, occupancy=occupancy)
+                                            bin_edges=None, occupancy=occupancy)
                 bin_edges = bt
             else:
                 ht, bt = frame.histogram_frame(dataname, occ_choice=occ_choice, bins=bins, range=range,
-                                               bin_edges=bin_edges, occupancy=occupancy)
+                                            bin_edges=bin_edges, occupancy=occupancy)
             hist.append(ht)
 
             ct = ct + 1
+        
+
         final_hist = np.sum(np.array(hist), axis=0)
         return final_hist, bin_edges
+    
+    def Randomize_Block_Frames(self, nblocks, frame_start=None, frame_stop=None):
+        import random
+        if frame_start is None:
+            frame_start = 0
+        if frame_stop is None:
+            frame_stop = len(self.frames)
+        num_frames = frame_stop - frame_start
+        frame_numbers = np.arange(num_frames)+frame_start
+        
+        # Randomize the frame numbers
+        random.shuffle(frame_numbers)
+
+        # Split the frame numbers into blocks using array_split
+        frame_blocks = np.array_split(frame_numbers, nblocks)
+        return frame_blocks
 
 
 if __name__ == "__main__":
