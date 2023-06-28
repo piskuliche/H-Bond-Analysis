@@ -363,7 +363,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             if frame_index == 22357:
                 print(ps_occupancy, la_occupancy)
                 print(occupancy)
-            lf_xy = _CHECK_OVERLAPS(lf_xy, frame_index)
+            lf_xy = _CHECK_OVERLAPS(lf_xy, frame_index=frame_index)
             # Compute the diagram
             vor = freud.locality.Voronoi(freud_box, lf_xy)
             cells = vor.compute((freud_box, lf_xy))
