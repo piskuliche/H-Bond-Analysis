@@ -362,6 +362,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             occupancy = _compare_occupancy(ps_occupancy, la_occupancy)
             if frame_index == 22357:
                 print(ps_occupancy, la_occupancy)
+                print(len(ps_occupancy), np.shape(lf_xy))
                 print(occupancy)
             lf_xy = _CHECK_OVERLAPS(lf_xy, frame_index=frame_index)
             # Compute the diagram
