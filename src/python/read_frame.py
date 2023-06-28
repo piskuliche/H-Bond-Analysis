@@ -303,10 +303,10 @@ class calculation_data:
         if occupancy:
             data1, data2, data3, data4 = [], [], [], []
             for frame in range(start, stop):
-                data1.append(self.frames[frame].grab_data(dataname, molec=molec, occupancy=True)[0])
-                data2.append(self.frames[frame].grab_data(dataname, molec=molec, occupancy=True)[1])
-                data3.append(self.frames[frame].grab_data(dataname, molec=molec, occupancy=True)[2])
-                data4.append(self.frames[frame].grab_data(dataname, molec=molec, occupancy=True)[3])
+                data1.append(self.frames[frame].grab_data(dataname, occupancy=True)[0])
+                data2.append(self.frames[frame].grab_data(dataname, occupancy=True)[1])
+                data3.append(self.frames[frame].grab_data(dataname, occupancy=True)[2])
+                data4.append(self.frames[frame].grab_data(dataname, occupancy=True)[3])
             if flatten:
                 # flatten arrays
                 data1 = [item for sublist in data1 for item in sublist]
@@ -315,10 +315,10 @@ class calculation_data:
                 data4 = [item for sublist in data4 for item in sublist]
             if average:
                 # average arrays
-                data1 = np.mean(data1, axis=1)
-                data2 = np.mean(data2, axis=1)
-                data3 = np.mean(data3, axis=1)
-                data4 = np.mean(data4, axis=1)
+                data1 = np.average(data1)
+                data2 = np.average(data2)
+                data3 = np.average(data3)
+                data4 = np.average(data4)
             return np.array(data1), np.array(data2), np.array(data3), np.array(data4)
         else:
             data = []
