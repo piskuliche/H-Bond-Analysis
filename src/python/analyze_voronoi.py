@@ -462,4 +462,4 @@ def Setup_Safe_Directory(dirname):
 
 
 if __name__ == "__main__":
-    Do_Files(leafsel="(resname POPC and name P*)", fstart=88, fstop=89)
+    Do_Files(leafsel="(resname POPC and name P*)", fstart=85, fstop=86)
