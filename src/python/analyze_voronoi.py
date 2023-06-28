@@ -176,21 +176,14 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             cell_occupancy[loc] = 1
         return cell_occupancy
 
-    def _compare_occupancy(occ1, occ2):
-        # Compares the occupancy of the two leaflets
-        if occ1 is None or occ2 is None:
-            if occ1 is None:
-                print("Issue with occ1")
-                print("occ2*2 = ", occ2*2)
-                return occ2*2
-            if occ2 is None:
-                print("Issue with occ2")
-                print("occ1 = ", occ1)
-                return occ1
-        o1_nz = (occ1 != 0)*1
-        o2_nz = (occ2 != 0)*2
-        both = o1_nz+o2_nz
-        return both
+    def _compare_occupancy(psoccupancy, resnames):
+        #TODO Generalize this function
+        # Determines the occupancy of the voronoi cells
+        popc_molecs = resnames == 'POPC'
+        laur_molecs = resnames == 'LAUR'
+        occupancy = np.zeros(len(resnames))
+        occupancy = occupancy + psoccupancy + laur_molecs*2
+        return occupancy
 
     def _check_array_periodicity(x, y, Lx, Ly):
         # Checks the periodicity of the array
@@ -359,7 +352,7 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             # Check PS occupancy
             ps_occupancy = _check_occupancy(lf_xy, ps_xy, freud_box)
             la_occupancy = _check_occupancy(lf_xy, laur_xy, freud_box)
-            occupancy = _compare_occupancy(ps_occupancy, la_occupancy)
+            occupancy = _compare_occupancy(ps_occupancy, leaf.resnames)
             if frame_index == 22357:
                 print(ps_occupancy, la_occupancy)
                 print(len(ps_occupancy), np.shape(lf_xy))
