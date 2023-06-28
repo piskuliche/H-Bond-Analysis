@@ -92,9 +92,29 @@ def Analyze_Leaflets(mda_U, selection="(resname POPC and name P*)",
     from sklearn.cluster import KMeans
 
     def _get_leaflet(mda_U, selection, periodicity=True):
+        def  _iterate_leaf(u, sel, periodicity, cutoff):
+            found = False
+            maxiter = 50
+            iter = 0
+            while not found:
+                if iter > maxiter:
+                    raise RuntimeError("Could not find leaflets")
+                L = LeafletFinder(mda_U, atom_selection, pbc=periodicity, cutoff = cutoff)
+                if len(L.groups() > 2):
+                    cutoff += 0.1
+                elif len(L.groups() < 2):
+                    cutoff -= 0.1
+                else:
+                    found = True
+                    if iter > 0:
+                        print("Found leaflets after {} iterations".format(iter))
+                        print("Cutoff: {}".format(cutoff))
+                iter += 1
+            return L
         # This function takes a MDAnalysis universe and returns the leaflets of the membrane.
+        default_cutoff = 12.6
         atom_selection = mda_U.select_atoms(selection)
-        L = LeafletFinder(mda_U, atom_selection, pbc=periodicity, cutoff=12.6)
+        L = _iterate_leaf(mda_U, atom_selection, periodicity, default_cutoff)
         return L.groups(0), L.groups(1)
 
     def _cluster_laur(mda_U, leafgroup1, leafgroup2, extra_sel):
@@ -442,4 +462,4 @@ def Setup_Safe_Directory(dirname):
 
 
 if __name__ == "__main__":
-    Do_Files(leafsel="(resname POPC and name P*)", fstart=1, fstop=100)
+    Do_Files(leafsel="(resname POPC and name P*)", fstart=88, fstop=89)
