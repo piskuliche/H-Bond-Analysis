@@ -351,12 +351,15 @@ def Generate_Voronoi_Diagrams(mda_U, first_leaf, second_leaf, ps_selection=None,
             laur_xy = _grab_leaf_points(laur_atoms, freud_box)
             # Check PS occupancy
             ps_occupancy = _check_occupancy(lf_xy, ps_xy, freud_box)
-            la_occupancy = _check_occupancy(lf_xy, laur_xy, freud_box)
             occupancy = _compare_occupancy(ps_occupancy, leaf.resnames)
+            """
+            This was used to test the occupancy issues I was getting
+            I think the new function is performing better.
             if frame_index == 22357:
                 print(ps_occupancy, la_occupancy)
                 print(len(ps_occupancy), np.shape(lf_xy))
                 print(occupancy)
+            """
             lf_xy = _CHECK_OVERLAPS(lf_xy, frame_index=frame_index)
             # Compute the diagram
             vor = freud.locality.Voronoi(freud_box, lf_xy)
@@ -439,4 +442,4 @@ def Setup_Safe_Directory(dirname):
 
 
 if __name__ == "__main__":
-    Do_Files(leafsel="(resname POPC and name P*)", fstart=45, fstop=46)
+    Do_Files(leafsel="(resname POPC and name P*)", fstart=1, fstop=100)
