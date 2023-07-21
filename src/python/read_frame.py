@@ -352,7 +352,7 @@ class calculation_data:
                 data2 = np.average(data2)
                 data3 = np.average(data3)
                 data4 = np.average(data4)
-            return np.array(data1), np.array(data2), np.array(data3), np.array(data4)
+            return np.array(data1, dtype=object), np.array(data2, dtype=object), np.array(data3, dtype=object), np.array(data4, dtype=object)
         else:
             data = []
             for frame in range(start, stop):
