@@ -18,7 +18,7 @@ def P2(x):
 def bond_unit_vec(r1, r2, L):
     dr = r2 - r1
     dr = dr - L*np.rint(dr/L)
-    return dr/np.sum(dr**2.)
+    return dr/np.sqrt(np.sum(dr**2.))
 
 """
 **** 
