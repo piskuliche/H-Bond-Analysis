@@ -118,6 +118,7 @@ def Main_Analysis(output_data, tprfile, trajfile):
         rmol, rdat = Analyze_by_Residue(u, ts, membrane, Calc_Rg_byres)
         output_data["rg"].append(MolData(rmol, rdat, zmol))
         pmol, pdat = Analyze_by_Residue(u, ts, laur_CN, Calc_P2_byres, optional=[0,0,1])
+        print(np.shape(zdat))
         output_data["tiltp2"].append(MolData(pmol,pdat, zmol))
         cmol, cdat = Analyze_by_Residue(u, ts, laur_CN, Calc_CosAngle_byres, optional=[0,0,1])
         output_data["tiltcosangle"].append(MolData(cmol,cdat, zmol))
